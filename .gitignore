@@ -1,7 +1,8 @@
 # Private folders
-./work
-./results
-./nextflow*
+work/
+results/
+nextflow/
+.nextflow*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
