@@ -24,7 +24,7 @@ Loosly based on CMBI - RadboudUMC DSL1 code
 
 process generate_mapping {
     // generate mapping file, including the paths required for Qiime import
-    container "qiimehelpers:v1.2"
+    container "script_dependencies:v1.0"
 
     publishDir params.outdir, mode: 'copy'
     
@@ -42,13 +42,13 @@ process generate_mapping {
 	singleton = "no"
     }    
     """
-    JOS_dummy_metadata.py ${params.reads} -o mapping.txt -n -p "\\\$PWD" -a ${singleton}
+    python3 $projectDir/bin/python/dummy_metadata.py ${params.reads} -o mapping.txt -n -p "\\\$PWD" -a ${singleton}
     """
 }
 
 process cutadapt {
     // run paired cutadapt
-    container "qiimehelpers:v1.2"
+    container "script_dependencies:v1.0"
     
     input:
     file(filename)
@@ -59,14 +59,14 @@ process cutadapt {
     
     script:
     """
-    JOS_run_cutadapt.py -f ${params.fwd_primer} -r ${params.rev_primer} -c ${params.cpus} *.fastq.gz
+    python3 $projectDir/bin/python/run_cutadapt.py -f ${params.fwd_primer} -r ${params.rev_primer} -c ${params.cpus} *.fastq.gz
     """
 }
 
 
 process validate_mapping {
 // validate existing mapping file
-    container "qiimehelpers:v1.2"
+    container "script_dependencies:v1.0"
 
     input:
     file(metadata)
@@ -77,7 +77,7 @@ process validate_mapping {
 
     script:
     """
-    JOS_validate_mapping.py -i ${metadata} -d
+    python3 $projectDir/bin/python/validate_mapping.py -i ${metadata} -d
     """
 }
 
@@ -99,7 +99,7 @@ process fastqc {
 
 process multiqc {
 // run multiqc
-    container "qiimehelpers:v1.2"
+    container "script_dependencies:v1.0"
     publishDir params.outdir, mode: 'copy'
     
     input:
@@ -132,7 +132,7 @@ process fastqc_pear {
 
 process multiqc_pear {
 // run multiqc
-    container "qiimehelpers:v1.2"
+    container "script_dependencies:v1.0"
     publishDir "${params.outdir}/multiqc_pear", mode: 'copy'
     
     input:
@@ -166,7 +166,7 @@ process pear {
 
 process qiime_import {
     // import sequences from fastq en metadata file
-    container "quay.io/qiime2/core:2023.2"
+    container "quay.io/qiime2/core:2020.8"
 
     publishDir "${params.outdir}/qiime_artefacts/", mode: "copy"
 
@@ -191,7 +191,7 @@ process qiime_import {
 
 process dada2_denoise {
     // denoise with dada2
-    container "quay.io/qiime2/core:2023.2"
+    container "quay.io/qiime2/core:2020.8"
     containerOptions "--cpus ${params.cpus}"
 
     publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza}", mode: "copy"
@@ -277,7 +277,7 @@ process dada2_denoise {
 
 process assign_taxonomy {
     // assign taxonomy using sklearn qiime2
-    container "quay.io/qiime2/core:2023.2"
+    container "quay.io/qiime2/core:2020.8"
     containerOptions "--cpus ${params.cpus}"
 
     publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza, qzv}", mode: "copy"
@@ -319,7 +319,7 @@ process assign_taxonomy {
 
 process combine_taxonomy_biom {
 // add taxonomy info to biom file
-    container "quay.io/qiime2/core:2023.2"
+    container "quay.io/qiime2/core:2020.8"
 
     publishDir params.outdir, mode: 'copy'
 
@@ -342,7 +342,7 @@ process combine_taxonomy_biom {
 
 process biom_to_biotaviz {
 // generate biotaviz from biom-with-taxonomy
-    container "qiimehelpers:v1.2"
+    container "script_dependencies:v1.0"
 
     publishDir params.outdir, mode: 'copy'
 
@@ -356,17 +356,17 @@ process biom_to_biotaviz {
 
     script:
     """
-    JOS_biom2biotaviz.py \
+    python3 $projectDir/bin/python/biom2biotaviz.py \
         -i ${biomfile} \
         -o foo.txt
-    JOS_clean_biom_txt.py \
+    python3 $projectDir/bin/python/clean_biom_txt.py \
         -i  ${biomfile}.txt \
         -o biom_clean_absolute.txt
-    JOS_biom2biotaviz.py \
+    python3 $projectDir/bin/python/biom2biotaviz.py \
         -i biom_clean_absolute.txt \
         -o biotaviz_clean_absolute.txt \
         -t
-    JOS_Biotaviz_counts_to_abundance.py \
+    python3 $projectDir/bin/python/Biotaviz_counts_to_abundance.py \
         -i biotaviz_clean_absolute.txt \
         -o biotaviz_clean_relative.txt \
         -r "${params.root_taxon}"
@@ -376,7 +376,7 @@ process biom_to_biotaviz {
 
 process phylogeny {
     // align ASVs
-    container "quay.io/qiime2/core:2023.2"
+    container "quay.io/qiime2/core:2020.8"
     containerOptions "--cpus ${params.cpus}"
 
     publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza, qzv}", mode: "copy"
@@ -409,7 +409,7 @@ process phylogeny {
 
 process alpha_rarefaction {
 // alpha rarefaction
-    container "quay.io/qiime2/core:2023.2"
+    container "quay.io/qiime2/core:2020.8"
     containerOptions "--cpus ${params.cpus}"
 
     publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza, qzv}", mode: "copy"
@@ -445,7 +445,7 @@ process alpha_rarefaction {
 
 process minmax {
     // get the minimum and maximum readcounts
-    container "qiimehelpers:v1.2"
+    container "script_dependencies:v1.0"
 
     input:
     file(featuretable)
@@ -456,16 +456,15 @@ process minmax {
 
     script:
     """
-    #conda run -n biom biom convert -i ${featuretable} -o ${featuretable}.txt --to-tsv
     biom convert -i ${featuretable} -o ${featuretable}.txt --to-tsv
-    table_minmax.py ${featuretable}.txt maximum > maxcount.txt
-    table_minmax.py ${featuretable}.txt minimum > mincount.txt
+    python3 $projectDir/bin/python/table_minmax.py ${featuretable}.txt maximum > maxcount.txt
+    python3 $projectDir/bin/python/table_minmax.py ${featuretable}.txt minimum > mincount.txt
     """
 }
 
 process core_diversity {
     // div diversity metrics (alpha + beta)
-    container "quay.io/qiime2/core:2023.2"
+    container "quay.io/qiime2/core:2020.8"
     containerOptions "--cpus ${params.cpus}"
 
     publishDir "${params.outdir}/distance_matrices/", pattern: "*.txt", mode: "copy"
@@ -503,7 +502,7 @@ process core_diversity {
 
 process merge_alpha_diversity {
     // merge alpha diversity metrics
-    container "quay.io/qiime2/core:2023.2"
+    container "quay.io/qiime2/core:2020.8"
     containerOptions "--cpus ${params.cpus}"
 
     publishDir params.outdir, mode: 'copy'
@@ -530,7 +529,7 @@ process merge_alpha_diversity {
 
 process beta_rarefaction {
     // beta rarefaction & tree building
-    container "quay.io/qiime2/core:2023.2"
+    container "quay.io/qiime2/core:2020.8"
     containerOptions "--cpus ${params.cpus}"
 
     publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza, qzv}", mode: "copy"
@@ -585,13 +584,13 @@ process sankeyplots  {
 
     script:
     """
-    JOS_Biotaviz2sankey.py -m ${mapping} -i ${biotaviz} -t 0.01
+    JOS_Biotaviz2sankey.py -m ${mapping} -i ${biotaviz}
     """
 }
 
 process merge_readstats_both  {
     // insert cutadapt and pear stats in dada2 stats
-    container "qiimehelpers:v1.2"
+    container "script_dependencies:v1.0"
 
     publishDir "${params.outdir}/", mode: 'copy'
 
@@ -605,14 +604,14 @@ process merge_readstats_both  {
     
     script:
     """
-    JOS_merge_readstats.py -d ${dada2_stats} -c ${cutadapt_stats} -p ${pear_stats} -o read_stats.txt
+    python3 $projectDir/bin/python/merge_readstats.py -d ${dada2_stats} -c ${cutadapt_stats} -p ${pear_stats} -o read_stats.txt
     """
 }
 
 
 process merge_readstats_pear  {
     // insert pear stats in dada2 stats
-    container "qiimehelpers:v1.2"
+    container "script_dependencies:v1.0"
 
     publishDir "${params.outdir}/", mode: 'copy'
 
@@ -625,14 +624,14 @@ process merge_readstats_pear  {
     
     script:
     """
-    JOS_merge_readstats.py -d ${dada2_stats} -p ${pear_stats} -o read_stats.txt
+    python3 $projectDir/bin/python/merge_readstats.py -d ${dada2_stats} -p ${pear_stats} -o read_stats.txt
     """
 }
 
 
 process merge_readstats_cutadapt  {
     // insert cutadapt stats in dada2 stats
-    container "qiimehelpers:v1.2"
+    container "script_dependencies:v1.0"
 
     publishDir "${params.outdir}/", mode: 'copy'
 
@@ -645,7 +644,7 @@ process merge_readstats_cutadapt  {
     
     script:
     """
-    JOS_merge_readstats.py -d ${dada2_stats} -c ${cutadapt_stats} -o read_stats.txt
+    python3 $projectDir/bin/python/merge_readstats.py -d ${dada2_stats} -c ${cutadapt_stats} -o read_stats.txt
     """
 }
 
