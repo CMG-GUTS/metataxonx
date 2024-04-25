@@ -570,7 +570,7 @@ process beta_rarefaction {
 
 process sankeyplots  {
     // merge alpha diversity metrics
-    container "qiime2_sankey:jos2"
+    container "script_dependencies:v1.0"
 
     publishDir "${params.outdir}/sankeyplots", mode: 'copy'
 
@@ -584,7 +584,7 @@ process sankeyplots  {
 
     script:
     """
-    JOS_Biotaviz2sankey.py -m ${mapping} -i ${biotaviz}
+    python3 $projectDir/bin/python/Biotaviz2sankey.py -m ${mapping} -i ${biotaviz}
     """
 }
 
