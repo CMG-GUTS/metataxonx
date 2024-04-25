@@ -149,7 +149,7 @@ process multiqc_pear {
 
 process pear {
     // run Paired-End reAd mergeR
-    container "qiimehelpers:v1.2"
+    container "script_dependencies:v1.0"
 
     input:
     file(fastqfile)
@@ -160,7 +160,7 @@ process pear {
 
     script:
     """
-    nice -${params.niceness} JOS_run_pear.py
+    nice -${params.niceness} $projectDir/bin/python/run_pear.py
     """
 }
 

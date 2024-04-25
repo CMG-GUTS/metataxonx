@@ -12,7 +12,7 @@ Add Pear-assembler and cutadapt statistics to the dada2_denoise stats file of qi
 
 Typical run::
 
-    JOS_merge_readstats -d denoising_stats.txt -i fastq/
+    merge_readstats -d denoising_stats.txt -i fastq/
 
 Run the script with '-h' for a list of options.
 """

@@ -13,8 +13,9 @@ RUN apt-get update && apt-get install -y \
     pandoc wget curl
 
 # Copy requirements
-COPY python_req.txt .
-COPY R_req.R .
+COPY requirements/python_req.txt .
+COPY requirements/R_req.R .
+COPY requirements/pear-0.9.11-linux-x86_64.tar.gz .
 
 # Python and R dependencies
 RUN pip3 install -r python_req.txt
@@ -36,7 +37,6 @@ RUN apt-get update \
   && rm -rf /tmp/* /var/lib/apt/lists/*
 
 # Setup PEAR (paired-end read merger)
-COPY pear-0.9.11-linux-x86_64.tar.gz .
 RUN tar -xzf pear-0.9.11-linux-x86_64.tar.gz \
     && mv pear-0.9.11-linux-x86_64/bin/pear /usr/local/bin \
     && rm pear-0.9.11-linux-x86_64.tar.gz
