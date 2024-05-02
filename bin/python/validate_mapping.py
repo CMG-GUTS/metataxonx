@@ -50,7 +50,7 @@ def check_compulsory_headers(df, errors, seq_read, pear):
 
 def check_columns(df):
     # Check existence of header keywords and valid values, corrects if it's not the case
-    # TODO: Implement letters & digits check for each column
+    # TODO: Implement letters & digits check for each column.
     for col in df.keys():
         if col.split("_")[0].upper() == "RANKSTAT":
             if not is_string_dtype(df[col]):

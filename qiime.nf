@@ -209,7 +209,7 @@ process dada2_denoise {
     path('asv_table_no_taxonomy.biom'), emit: biom_no_taxonomy
 
     script:
-    if (params.run_pear == "yes" || params.nanopore == "yes" || params.seq_read == "single") {
+    if ( params.run_pear == "yes" || params.nanopore == "yes" || params.seq_read == "single" ) {
         dadacall = "nice -${params.niceness} qiime dada2 denoise-single \
             --i-demultiplexed-seqs ${artifact} \
             --p-trim-left 0 \

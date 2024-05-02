@@ -55,7 +55,6 @@ def add_path(df, path_name, read_end):
         if read_end == "paired":
             file_rev = path_name + "/" + df.loc[i, 'FILENAME_rev']
             df.loc[i, 'FILENAME_rev'] = file_rev
-
     return df
 
 def update_metadata(metadata, sample_id, file_path, column_name, outdir):
