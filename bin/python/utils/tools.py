@@ -35,7 +35,7 @@ def get_metadata(infile):
         raise IOError("File format is not accepted; metadata should be .tsv or .csv file format")
     return metadata
 
-def add_path(df, path_name):
+def add_path(df, path_name, read_end):
     """
     Rewrites pandas dataframe column by their absolute filepath
 
@@ -50,10 +50,12 @@ def add_path(df, path_name):
     """
     for i in df.index:
         file_fw = path_name + "/" + df.loc[i, 'FILENAME_fw']
-        file_rev = path_name + "/" + df.loc[i, 'FILENAME_rev']
-
         df.loc[i, 'FILENAME_fw'] = file_fw
-        df.loc[i, 'FILENAME_rev'] = file_rev
+
+        if read_end == "paired":
+            file_rev = path_name + "/" + df.loc[i, 'FILENAME_rev']
+            df.loc[i, 'FILENAME_rev'] = file_rev
+
     return df
 
 def update_metadata(metadata, sample_id, file_path, column_name, outdir):

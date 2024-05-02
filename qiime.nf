@@ -70,7 +70,7 @@ process validate_mapping {
     file(filename)
 
     output:
-    path("metadata.tsv"), emit: metadata_clean
+    path("metadata_clean.tsv"), emit: metadata_clean
 
     script:
     """
@@ -209,7 +209,7 @@ process dada2_denoise {
     path('asv_table_no_taxonomy.biom'), emit: biom_no_taxonomy
 
     script:
-    if (params.run_pear == "yes" || params.nanopore == "yes") {
+    if (params.run_pear == "yes" || params.nanopore == "yes" || params.seq_read == "single") {
         dadacall = "nice -${params.niceness} qiime dada2 denoise-single \
             --i-demultiplexed-seqs ${artifact} \
             --p-trim-left 0 \
@@ -647,26 +647,26 @@ process merge_readstats_cutadapt  {
     """
 }
 
-// process omics_analysis {
-//     container "script_dependencies:v1.0"
+process omics_analysis {
+    container "script_dependencies:v1.0"
 
-//     publishDir "${params.outdir}/analysis", mode: 'copy'
+    publishDir "${params.outdir}/analysis", mode: 'copy'
 
-//     input:
-//     file(metadata_clean)
-//     file(biom_taxonomy)
-//     file(rooted_tree_newick)
+    input:
+    file(metadata_clean)
+    file(biom_taxonomy)
+    file(rooted_tree_newick)
 
-//     output:
-//     path("*.png")
-//     path("*.pdf")
-//     path("*.html")
+    output:
+    path("*.png")
+    path("*.pdf")
+    path("*.html")
 
-//     script:
-//     """
-//     Rscript $projectDir/bin/R/00_main.R --metadata ${metadata_clean} --biom ${biom_taxonomy} --tree ${rooted_tree_newick}
-//     """
-// }
+    script:
+    """
+    Rscript $projectDir/bin/R/00_main.R --metadata ${metadata_clean} --biom ${biom_taxonomy} --tree ${rooted_tree_newick}
+    """
+}
 
 
 

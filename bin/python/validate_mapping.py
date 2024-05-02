@@ -27,17 +27,15 @@ from utils.tools import get_metadata, add_path
 
 def check_filename_reads(df, errors, seq_arg, pear_arg):
     for col in df.keys():
-        if col.lower().find("FILENAME_fw") == -1 and len(df["FILENAME_fw"]) != 0:
+        if col.lower().find("FILENAME_fw") == -1 and not df["FILENAME_fw"].isnull().any():
             pass
         else:
-                errors.append("metadata filename_fw column missing or empty!")
+            errors.append("metadata filename_fw column missing or empty!")
         if seq_arg == "paired" or pear_arg == "yes":
-            if col.lower().find("FILENAME_rev") == -1 and len(df["FILENAME_rev"]) != 0:
+            if col.lower().find("FILENAME_rev") == -1 and not df["FILENAME_rev"].isnull().any():
                 pass 
             else:
                 errors.append("metadata filename_rev column missing or empty!")
-        else:
-            errors.append("Sequence read 'paired' is given, but FILENAME_rev is missing!")
     return errors
 
 def check_compulsory_headers(df, errors, seq_read, pear):
@@ -52,6 +50,7 @@ def check_compulsory_headers(df, errors, seq_read, pear):
 
 def check_columns(df):
     # Check existence of header keywords and valid values, corrects if it's not the case
+    # TODO: Implement letters & digits check for each column
     for col in df.keys():
         if col.split("_")[0].upper() == "RANKSTAT":
             if not is_string_dtype(df[col]):
@@ -70,14 +69,14 @@ def check_columns(df):
                 df[col] = df[col].astype(str)
     return df
 
-def generate_corrected_metadata(df, errors):
+def generate_corrected_metadata(df, errors, seq_read):
     # Collects cleaned metadata
     df_clean = check_columns(df) 
     # Drops duplicates
     df_clean.drop_duplicates()
 
     # Create clean metadata format
-    df_clean_metadata = add_path(df=df_clean.copy(), path_name=os.getcwd())
+    df_clean_metadata = add_path(df=df_clean.copy(), path_name=os.getcwd(), read_end=seq_read)
     df_clean_metadata.to_csv("metadata_clean.tsv", sep='\t', index=False, header=True)
 
     return errors
@@ -112,7 +111,7 @@ if __name__ == '__main__':
 
     # the actual checks
     checked_metadata, errors = check_compulsory_headers(metadata, errors, options['seq_read'], options['pear']) # checks for sample-id, filename_fw, filename_rev
-    errors = generate_corrected_metadata(checked_metadata, errors)
+    errors = generate_corrected_metadata(checked_metadata, errors, options['seq_read'])
 
     # reporting
     if len(errors) == 0:
