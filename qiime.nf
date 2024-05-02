@@ -9,6 +9,7 @@ log.info "root taxon             : ${params.root_taxon}"
 log.info "run_pear               : ${params.run_pear}"
 log.info "nanopore               : ${params.nanopore}"
 log.info "niceness               : ${params.niceness}"
+log.info "Sequence reading       : ${params.seq_read}"
 log.info "forward primer         : ${params.fwd_primer}"
 log.info "reverse primer         : ${params.rev_primer}"
 log.info "====================================="
@@ -32,17 +33,11 @@ process generate_mapping {
     file(reads)
 
     output:
-    path("mapping.txt")
+    path("metadata.tsv"), emit: metadata_clean
     
-    script:
-    if (params.nanopore == "yes" || params.run_pear == "yes") {
-	singleton = "yes"
-    }
-    else {
-	singleton = "no"
-    }    
+    script: 
     """
-    python3 $projectDir/bin/python/dummy_metadata.py ${params.reads} -o mapping.txt -n -p "\\\$PWD" -a ${singleton}
+    python3 $projectDir/bin/python/dummy_metadata.py -s ${params.seq_read} --pear ${params.run_pear} -o metadata.tsv
     """
 }
 
@@ -52,14 +47,16 @@ process cutadapt {
     
     input:
     file(filename)
+    file(metadata_clean)
     
     output:
     path("trimmed/*"), emit: trimmed
     path("cutadapt_counts.txt"), emit: counts
+    path("mapping.txt"), emit: qiime_metadata
     
     script:
     """
-    python3 $projectDir/bin/python/run_cutadapt.py -f ${params.fwd_primer} -r ${params.rev_primer} -c ${params.cpus} *.fastq.gz
+    python3 $projectDir/bin/python/run_cutadapt.py -f ${params.fwd_primer} -r ${params.rev_primer} -c ${params.cpus} -m ${metadata_clean} -s ${params.seq_read} --pear ${params.run_pear}
     """
 }
 
@@ -73,11 +70,11 @@ process validate_mapping {
     file(filename)
 
     output:
-    path("mapping_for_nextflow.txt")
+    path("metadata.tsv"), emit: metadata_clean
 
     script:
     """
-    python3 $projectDir/bin/python/validate_mapping.py -i ${metadata} -d
+    python3 $projectDir/bin/python/validate_mapping.py -i ${metadata} -s ${params.seq_read} --pear ${params.run_pear}
     """
 }
 
@@ -153,14 +150,16 @@ process pear {
 
     input:
     file(fastqfile)
+    file(metadata_clean)
 
     output:
     path("assembled/*.fastq.gz"), emit: assembled
     path("pear_counts.txt"), emit: counts
+    path("mapping.txt"), emit: qiime_metadata
 
     script:
     """
-    nice -${params.niceness} $projectDir/bin/python/run_pear.py
+    nice -${params.niceness} $projectDir/bin/python/run_pear.py -m ${metadata_clean}
     """
 }
 
@@ -171,7 +170,7 @@ process qiime_import {
     publishDir "${params.outdir}/qiime_artefacts/", mode: "copy"
 
     input:
-    file(metadata)
+    file(qiime_metadata)
     file(fastqfile)
     val(sampletype)
     val(inputformat)
@@ -183,7 +182,7 @@ process qiime_import {
     """
     qiime tools import \
          --type '${sampletype}' \
-         --input-path ${metadata} \
+         --input-path ${qiime_metadata} \
          --output-path demux.qza \
          --input-format ${inputformat}
     """
@@ -328,7 +327,7 @@ process combine_taxonomy_biom {
     path(taxonomyfile)
 
     output:
-    path("biom_with_taxonomy.biom")
+    path("biom_with_taxonomy.biom"), emit: biom_taxonomy
 
     script:
     """
@@ -386,7 +385,7 @@ process phylogeny {
     file(sequences)
 
     output:
-    path("rooted_tree.newick")
+    path("rooted_tree.newick"), emit: rooted_tree_newick
     path("rooted-tree.qza"), emit: rooted_tree_qza
 
     script:
@@ -648,6 +647,27 @@ process merge_readstats_cutadapt  {
     """
 }
 
+// process omics_analysis {
+//     container "script_dependencies:v1.0"
+
+//     publishDir "${params.outdir}/analysis", mode: 'copy'
+
+//     input:
+//     file(metadata_clean)
+//     file(biom_taxonomy)
+//     file(rooted_tree_newick)
+
+//     output:
+//     path("*.png")
+//     path("*.pdf")
+//     path("*.html")
+
+//     script:
+//     """
+//     Rscript $projectDir/bin/R/00_main.R --metadata ${metadata_clean} --biom ${biom_taxonomy} --tree ${rooted_tree_newick}
+//     """
+// }
+
 
 
 workflow {
@@ -655,7 +675,7 @@ workflow {
     sample_ch = Channel.fromPath("${params.reads}",  checkIfExists:true)
     classifier_ch = Channel.fromPath(params.classifier)
 
-    // mapping file stuff
+     // mapping file stuff
     if (params.metadata) { // was a mapping file provided?
 	    mapping_ch = Channel.fromPath("${params.metadata}")
 	    validate_mapping(mapping_ch, sample_ch.collect())
@@ -671,31 +691,33 @@ workflow {
     multiqc(fastqc.out.collect())
 
     // cutadapt
-    if (params.fwd_primer != "" && params.rev_primer != "") {
-	cutadapt(sample_ch.collect())
-	sample_ch = cutadapt.out.trimmed
+    if (params.fwd_primer != "" && params.rev_primer != "" && params.seq_read != "") {
+        cutadapt(sample_ch.collect(), mapping_ch.metadata_clean)
+        sample_ch = cutadapt.out.trimmed
+        qiime_mapping = cutadapt.out.qiime_metadata
     }
     
     // Qiime stuff
     // assembly (if any), import, and DADA2 are pairedness-dependent
-    if (params.run_pear == "yes") { 
+    if (params.seq_read == "single" || params.nanopore == "yes") {
         sampletype = "'SampleData[SequencesWithQuality]'"
         inputformat = 'SingleEndFastqManifestPhred33V2'
-        pear(sample_ch.collect())
-        sample_ch = pear.out.assembled
-	fastqc_pear(sample_ch)
-	multiqc_pear(fastqc_pear.out.collect())
-    }
-    else if (params.nanopore == "yes"){
+        
+    } else if (params.seq_read == "paired" && params.run_pear == "yes") {
         sampletype = "'SampleData[SequencesWithQuality]'"
-        inputformat = 'SingleEndFastqManifestPhred33V2'	
-    }
-    else {
+        inputformat = 'SingleEndFastqManifestPhred33V2'
+        pear(sample_ch.collect(), mapping_ch.metadata_clean)
+        sample_ch = pear.out.assembled
+        qiime_mapping = pear.out.qiime_metadata
+        fastqc_pear(sample_ch)
+        multiqc_pear(fastqc_pear.out.collect())
+
+    } else if (params.seq_read == "paired" && params.run_pear == "no") {
         sampletype = "'SampleData[PairedEndSequencesWithQuality]'"
         inputformat = 'PairedEndFastqManifestPhred33V2'
-    }
+    } 
     
-    qiime_import(mapping_ch, sample_ch.collect(), sampletype, inputformat)
+    qiime_import(qiime_mapping, sample_ch.collect(), sampletype, inputformat)
     dada2_denoise(qiime_import.out)
 
     // below bit: conditional readstats merger. A nextflow conditional channel input option would be nice.
@@ -715,10 +737,11 @@ workflow {
     biom_to_biotaviz(combine_taxonomy_biom.out)
     minmax(dada2_denoise.out.biom_no_taxonomy)
     alpha_rarefaction(dada2_denoise.out.asv_qza, phylogeny.out.rooted_tree_qza, minmax.out.maxcount)
-    core_diversity(mapping_ch, phylogeny.out.rooted_tree_qza, dada2_denoise.out.asv_qza, minmax.out.mincount)
+    core_diversity(mapping_ch.metadata_clean, phylogeny.out.rooted_tree_qza, dada2_denoise.out.asv_qza, minmax.out.mincount)
     merge_alpha_diversity(core_diversity.out.alpha.collect())
-    beta_rarefaction(dada2_denoise.out.asv_qza, mapping_ch, minmax.out.mincount, phylogeny.out.rooted_tree_qza)
+    beta_rarefaction(dada2_denoise.out.asv_qza, mapping_ch.metadata_clean, minmax.out.mincount, phylogeny.out.rooted_tree_qza)
 
     // post-qiime visualization and statistics
-    sankeyplots(mapping_ch, biom_to_biotaviz.out.biotaviz)
+    sankeyplots(mapping_ch.metadata_clean, biom_to_biotaviz.out.biotaviz)
+    //omics_analysis(mapping_ch, phylogeny.out.rooted_tree_newick, combine_taxonomy_biom.out.biom_taxonomy)
 }
