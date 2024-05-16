@@ -4,6 +4,7 @@ log.info "reads                  : ${params.reads}"
 log.info "cpus                   : ${params.cpus}"
 log.info "output                 : ${params.outdir}"
 log.info "metadata file          : ${params.metadata}"
+log.info "analysis column        : ${params.rankstat_col}"
 log.info "taxonomy classifier    : ${params.classifier}"
 log.info "root taxon             : ${params.root_taxon}"
 log.info "run_pear               : ${params.run_pear}"
@@ -25,7 +26,7 @@ Loosly based on CMBI - RadboudUMC DSL1 code
 
 process generate_mapping {
     // generate mapping file, including the paths required for Qiime import
-    container "script_dependencies:v1.0"
+    container "script_dependencies:v2.0"
 
     publishDir params.outdir, mode: 'copy'
     
@@ -37,13 +38,13 @@ process generate_mapping {
     
     script: 
     """
-    python3 $projectDir/bin/python/dummy_metadata.py -s ${params.seq_read} --pear ${params.run_pear} -o metadata.tsv
+    python3.11 $projectDir/bin/python/dummy_metadata.py -s ${params.seq_read} --pear ${params.run_pear} -o metadata.tsv
     """
 }
 
 process cutadapt {
     // run paired cutadapt
-    container "script_dependencies:v1.0"
+    container "script_dependencies:v2.0"
     
     input:
     file(filename)
@@ -56,14 +57,14 @@ process cutadapt {
     
     script:
     """
-    python3 $projectDir/bin/python/run_cutadapt.py -f ${params.fwd_primer} -r ${params.rev_primer} -c ${params.cpus} -m ${metadata_clean} -s ${params.seq_read} --pear ${params.run_pear}
+    python3.11 $projectDir/bin/python/run_cutadapt.py -f ${params.fwd_primer} -r ${params.rev_primer} -c ${params.cpus} -m ${metadata_clean} -s ${params.seq_read} --pear ${params.run_pear}
     """
 }
 
 
 process validate_mapping {
 // validate existing mapping file
-    container "script_dependencies:v1.0"
+    container "script_dependencies:v2.0"
 
     input:
     file(metadata)
@@ -74,7 +75,7 @@ process validate_mapping {
 
     script:
     """
-    python3 $projectDir/bin/python/validate_mapping.py -i ${metadata} -s ${params.seq_read} --pear ${params.run_pear}
+    python3.11 $projectDir/bin/python/validate_mapping.py -i ${metadata} -s ${params.seq_read} --pear ${params.run_pear}
     """
 }
 
@@ -96,7 +97,7 @@ process fastqc {
 
 process multiqc {
 // run multiqc
-    container "script_dependencies:v1.0"
+    container "script_dependencies:v2.0"
     publishDir params.outdir, mode: 'copy'
     
     input:
@@ -129,7 +130,7 @@ process fastqc_pear {
 
 process multiqc_pear {
 // run multiqc
-    container "script_dependencies:v1.0"
+    container "script_dependencies:v2.0"
     publishDir "${params.outdir}/multiqc_pear", mode: 'copy'
     
     input:
@@ -146,7 +147,7 @@ process multiqc_pear {
 
 process pear {
     // run Paired-End reAd mergeR
-    container "script_dependencies:v1.0"
+    container "script_dependencies:v2.0"
 
     input:
     file(fastqfile)
@@ -159,7 +160,7 @@ process pear {
 
     script:
     """
-    nice -${params.niceness} $projectDir/bin/python/run_pear.py -m ${metadata_clean}
+    nice -${params.niceness} python3.11 $projectDir/bin/python/run_pear.py -m ${metadata_clean}
     """
 }
 
@@ -201,7 +202,7 @@ process dada2_denoise {
 
     output:
     path('dada_report.txt')
-    path('representative_sequences.fasta')
+    path('representative_sequences.fasta'), emit: sequences_fasta
     path('denoising_stats.txt'), emit: dada2stats
     path("table.qza"), emit: asv_qza
     path("rep-seqs.qza"), emit: repseqs_qza
@@ -341,7 +342,7 @@ process combine_taxonomy_biom {
 
 process biom_to_biotaviz {
 // generate biotaviz from biom-with-taxonomy
-    container "script_dependencies:v1.0"
+    container "script_dependencies:v2.0"
 
     publishDir params.outdir, mode: 'copy'
 
@@ -355,17 +356,17 @@ process biom_to_biotaviz {
 
     script:
     """
-    python3 $projectDir/bin/python/biom2biotaviz.py \
+    python3.11 $projectDir/bin/python/biom2biotaviz.py \
         -i ${biomfile} \
         -o foo.txt
-    python3 $projectDir/bin/python/clean_biom_txt.py \
+    python3.11 $projectDir/bin/python/clean_biom_txt.py \
         -i  ${biomfile}.txt \
         -o biom_clean_absolute.txt
-    python3 $projectDir/bin/python/biom2biotaviz.py \
+    python3.11 $projectDir/bin/python/biom2biotaviz.py \
         -i biom_clean_absolute.txt \
         -o biotaviz_clean_absolute.txt \
         -t
-    python3 $projectDir/bin/python/Biotaviz_counts_to_abundance.py \
+    python3.11 $projectDir/bin/python/Biotaviz_counts_to_abundance.py \
         -i biotaviz_clean_absolute.txt \
         -o biotaviz_clean_relative.txt \
         -r "${params.root_taxon}"
@@ -444,7 +445,7 @@ process alpha_rarefaction {
 
 process minmax {
     // get the minimum and maximum readcounts
-    container "script_dependencies:v1.0"
+    container "script_dependencies:v2.0"
 
     input:
     file(featuretable)
@@ -456,8 +457,8 @@ process minmax {
     script:
     """
     biom convert -i ${featuretable} -o ${featuretable}.txt --to-tsv
-    python3 $projectDir/bin/python/table_minmax.py ${featuretable}.txt maximum > maxcount.txt
-    python3 $projectDir/bin/python/table_minmax.py ${featuretable}.txt minimum > mincount.txt
+    python3.11 $projectDir/bin/python/table_minmax.py ${featuretable}.txt maximum > maxcount.txt
+    python3.11 $projectDir/bin/python/table_minmax.py ${featuretable}.txt minimum > mincount.txt
     """
 }
 
@@ -569,7 +570,7 @@ process beta_rarefaction {
 
 process sankeyplots  {
     // merge alpha diversity metrics
-    container "script_dependencies:v1.0"
+    container "script_dependencies:v2.0"
 
     publishDir "${params.outdir}/sankeyplots", mode: 'copy'
 
@@ -583,13 +584,13 @@ process sankeyplots  {
 
     script:
     """
-    python3 $projectDir/bin/python/Biotaviz2sankey.py -m ${mapping} -i ${biotaviz}
+    python3.11 $projectDir/bin/python/Biotaviz2sankey.py -m ${mapping} -i ${biotaviz}
     """
 }
 
 process merge_readstats_both  {
     // insert cutadapt and pear stats in dada2 stats
-    container "script_dependencies:v1.0"
+    container "script_dependencies:v2.0"
 
     publishDir "${params.outdir}/", mode: 'copy'
 
@@ -603,14 +604,14 @@ process merge_readstats_both  {
     
     script:
     """
-    python3 $projectDir/bin/python/merge_readstats.py -d ${dada2_stats} -c ${cutadapt_stats} -p ${pear_stats} -o read_stats.txt
+    python3.11 $projectDir/bin/python/merge_readstats.py -d ${dada2_stats} -c ${cutadapt_stats} -p ${pear_stats} -o read_stats.txt
     """
 }
 
 
 process merge_readstats_pear  {
     // insert pear stats in dada2 stats
-    container "script_dependencies:v1.0"
+    container "script_dependencies:v2.0"
 
     publishDir "${params.outdir}/", mode: 'copy'
 
@@ -623,14 +624,14 @@ process merge_readstats_pear  {
     
     script:
     """
-    python3 $projectDir/bin/python/merge_readstats.py -d ${dada2_stats} -p ${pear_stats} -o read_stats.txt
+    python3.11 $projectDir/bin/python/merge_readstats.py -d ${dada2_stats} -p ${pear_stats} -o read_stats.txt
     """
 }
 
 
 process merge_readstats_cutadapt  {
     // insert cutadapt stats in dada2 stats
-    container "script_dependencies:v1.0"
+    container "script_dependencies:v2.0"
 
     publishDir "${params.outdir}/", mode: 'copy'
 
@@ -643,30 +644,36 @@ process merge_readstats_cutadapt  {
     
     script:
     """
-    python3 $projectDir/bin/python/merge_readstats.py -d ${dada2_stats} -c ${cutadapt_stats} -o read_stats.txt
+    python3.11 $projectDir/bin/python/merge_readstats.py -d ${dada2_stats} -c ${cutadapt_stats} -o read_stats.txt
     """
 }
 
-process omics_analysis {
-    container "script_dependencies:v1.0"
+// process omics_analysis {
+//     container "script_dependencies:v2.0"
 
-    publishDir "${params.outdir}/analysis", mode: 'copy'
+//     publishDir "${params.outdir}/analysis", mode: 'copy'
 
-    input:
-    file(metadata_clean)
-    file(biom_taxonomy)
-    file(rooted_tree_newick)
+//     input:
+//     file(metadata_clean)
+//     file(biom_taxonomy)
+//     file(rooted_tree_newick)
+//     file(sequences_fasta)
 
-    output:
-    path("*.png")
-    path("*.pdf")
-    path("*.html")
+//     output:
+//     path("*.png")
+//     path("*.pdf")
+//     path("*.html")
 
-    script:
-    """
-    Rscript $projectDir/bin/R/00_main.R --metadata ${metadata_clean} --biom ${biom_taxonomy} --tree ${rooted_tree_newick}
-    """
-}
+//     script:
+//     """
+//     Rscript $projectDir/bin/R/automated-omics-analysis/R/00_main.R \
+//         --metadata ${metadata_clean} \
+//         --biom ${biom_taxonomy} \
+//         --tree ${rooted_tree_newick} \
+//         --refseq ${sequences_fasta} \
+//         --colname ${params.rankstat_col}
+//     """
+// }
 
 
 
@@ -676,7 +683,7 @@ workflow {
     classifier_ch = Channel.fromPath(params.classifier)
 
      // mapping file stuff
-    if (params.metadata) { // was a mapping file provided?
+    if (params.metadata != "") { // was a mapping file provided?
 	    mapping_ch = Channel.fromPath("${params.metadata}")
 	    validate_mapping(mapping_ch, sample_ch.collect())
 	    mapping_ch = validate_mapping.out
@@ -743,5 +750,7 @@ workflow {
 
     // post-qiime visualization and statistics
     sankeyplots(mapping_ch.metadata_clean, biom_to_biotaviz.out.biotaviz)
-    //omics_analysis(mapping_ch, phylogeny.out.rooted_tree_newick, combine_taxonomy_biom.out.biom_taxonomy)
+    // if (params.rankstat_col != "") {
+    //     omics_analysis(mapping_ch.metadata_clean, phylogeny.out.rooted_tree_newick, combine_taxonomy_biom.out.biom_taxonomy, dada2_denoise.out.sequences_fasta)
+    // }
 }
