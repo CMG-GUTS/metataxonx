@@ -92,9 +92,9 @@ RUN apt-get update && apt-get upgrade -y && apt-get clean
 RUN apt-get update && apt-get install -y r-base
 
 # Copy requirements
-COPY requirements/littler/inst/examples/install2.r .
-COPY requirements/littler/inst/examples/installBioc.r .
-COPY requirements/littler/inst/examples/installGithub.r .
+COPY requirements/install2.r .
+COPY requirements/installBioc.r .
+COPY requirements/installGithub.r .
 
 # Required package for install2.r
 RUN R -e "install.packages('docopt',dependencies=TRUE)"
