@@ -20,7 +20,7 @@ Run the script with '-h' for a list of options.
 """
 
 import argparse
-import sys, os, glob
+import sys, os, glob, re
 from utils.tools import get_metadata, generate_qiime_mapping, get_file_counts
 
 def write_counts(metadata, outfolder, outname, reverse=None):
@@ -47,12 +47,51 @@ def write_counts(metadata, outfolder, outname, reverse=None):
                 postcount = get_file_counts(f'{outfolder}/{trim_file}')
                 f.write("\t".join([sample_name, str(precount), str(postcount)]) + '\n')
 
-def run_cutadapt(sample, forward, options, reverse=None):
-    if reverse:
-        command = f"cutadapt -j {options['cpus']} --discard-untrimmed -g {options['fw']} -G {options['rev']} -o trimmed/{sample}_R1.fastq.gz -p trimmed/{sample}_R2.fastq.gz {forward} {reverse}"
+
+def adapter_trimming(sample, forward, options, reverse=None):
+    if os.path.basename(options['fw_adapter']) == "adapters.fasta":
+        adapter_option = f" --minimum-length 50 -a file:{options['fw_adapter']}"
+        if reverse:
+            adapter_option += f" -A file:{options['rev_adapter']}"
+    if re.search("[ATGC]", options['fw_adapter']):
+        adapter_option = f" -a {options['fw_adapter']}"
+        if reverse:
+            adapter_option += f" -A {options['rev_adapter']}"
     else:
-        command = f"cutadapt -j {options['cpus']} --discard-untrimmed -g {options['fw']} -o trimmed/{sample}_R1.fastq.gz {forward}"
+        adapter_option = ""
+
+    command = f"cutadapt -j {options['cpus']} --discard-untrimmed {adapter_option} -o trimmed/{sample}_R1.fastq.gz -p trimmed/{sample}_R2.fastq.gz {forward} {reverse}"
     result = os.system(command)
+    return(result)  
+
+def primer_trimming(sample, forward, options, reverse=None):
+    if os.path.basename(options['fw_primer']) == "primers.fasta":
+        primer_option = f" -g file:{options['fw_primer']}"
+        if reverse:
+            primer_option += f" -G file:{options['rev_primer']}"
+    if re.search("[ATGC]", options['fw_primer']):
+        primer_option = f" -g {options['fw_primer']}"
+        if reverse:
+            primer_option += f" -G {options['rev_primer']}"
+    else:
+        primer_option = ""
+
+    command = f"cutadapt -j {options['cpus']} --discard-untrimmed {primer_option} -o trimmed/{sample}_R1.fastq.gz -p trimmed/{sample}_R2.fastq.gz {forward} {reverse}"
+    result = os.system(command)
+    return(result)    
+
+def run_cutadapt(sample, forward, options, reverse=None):
+    # if options['fw_adapter'] != "false" and options['fw_primer'] != "false":
+    #     res1 = adapter_trimming(sample, forward, options, reverse)
+    #     res2 = primer_trimming(sample, forward, options, reverse)
+    #     result = res1 + res2
+    if options['fw_adapter'] != "false":
+        result = adapter_trimming(sample, forward, options, reverse)
+    elif options['fw_primer'] != "false":
+        result = primer_trimming(sample, forward, options, reverse)
+    else:
+        sys.stderr.write(f"'fw_adapter' and 'fw_primer' with/without reverse are empty!")
+        sys.exit(1)
     if result != 0:
         sys.stderr.write("Error running cutadapt, aborting\n")
         sys.exit(1)
@@ -68,8 +107,10 @@ description = "run cutadapt on paired-end illumina-style data"
 # main program
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=description, add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-f', dest='fw', help='fwd primer sequence', required=True)
-    parser.add_argument('-r', dest='rev', help='rev primer sequence', required=True)
+    parser.add_argument('-fp', dest='fw_primer', help='fwd primer sequence', required=True)
+    parser.add_argument('-rp', dest='rev_primer', help='rev primer sequence', required=True)
+    parser.add_argument('-fa', dest='fw_adapter', help='fwd adapter sequence', required=True)
+    parser.add_argument('-ra', dest='rev_adapter', help='rev adapter sequence', required=True)
     parser.add_argument('-m', dest="metadata", help='metadata file', required=True)
     parser.add_argument('-s', dest="seq_read", help='single or paired end sequence reading', required=True)
     parser.add_argument('--pear', dest="pear", help="PEAR 'yes' or 'no'", required=True)

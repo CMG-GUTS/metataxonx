@@ -13,7 +13,8 @@ log.info "niceness               : ${params.niceness}"
 log.info "Sequence reading       : ${params.seq_read}"
 log.info "forward primer         : ${params.fwd_primer}"
 log.info "reverse primer         : ${params.rev_primer}"
-log.info "Adapter sequences      : ${params.adapters}"
+log.info "forward adapter        : ${params.fwd_adapter}"
+log.info "reverse adapter        : ${params.rev_adapter}"
 log.info "====================================="
 log.info "\n"
 
@@ -58,8 +59,11 @@ process cutadapt {
     
     script:
     """
-    python3.11 $projectDir/bin/python/run_cutadapt.py -f ${params.fwd_primer} -r ${params.rev_primer} -c ${params.cpus} \
-    -m ${metadata_clean} -s ${params.seq_read} --pear ${params.run_pear}
+    python3.11 $projectDir/bin/python/run_cutadapt.py \
+    -fp ${params.fwd_primer} -rp ${params.rev_primer} \
+    -fa ${params.fwd_adapter} -ra ${params.rev_adapter} \
+    -c ${params.cpus} -m ${metadata_clean} -s ${params.seq_read} \
+    --pear ${params.run_pear}
     """
 }
 
