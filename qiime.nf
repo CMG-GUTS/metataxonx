@@ -702,7 +702,7 @@ workflow {
         qiime_mapping = cutadapt.out.qiime_metadata        
     }
     
-    // QC stuff
+    // Quality control on both untrimmed and trimmed reads
     combined_ch = sample_ch.toList().merge(trimmed_ch)
     fastqc(combined_ch.collect())
     multiqc(fastqc.out.collect())
