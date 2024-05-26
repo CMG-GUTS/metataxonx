@@ -13,6 +13,7 @@ log.info "niceness               : ${params.niceness}"
 log.info "Sequence reading       : ${params.seq_read}"
 log.info "forward primer         : ${params.fwd_primer}"
 log.info "reverse primer         : ${params.rev_primer}"
+log.info "Adapter sequences      : ${params.adapters}"
 log.info "====================================="
 log.info "\n"
 
@@ -57,7 +58,8 @@ process cutadapt {
     
     script:
     """
-    python3.11 $projectDir/bin/python/run_cutadapt.py -f ${params.fwd_primer} -r ${params.rev_primer} -c ${params.cpus} -m ${metadata_clean} -s ${params.seq_read} --pear ${params.run_pear}
+    python3.11 $projectDir/bin/python/run_cutadapt.py -f ${params.fwd_primer} -r ${params.rev_primer} -c ${params.cpus} \
+    -m ${metadata_clean} -s ${params.seq_read} --pear ${params.run_pear}
     """
 }
 
@@ -108,7 +110,7 @@ process multiqc {
 
     script:
     """
-    multiqc ./
+    multiqc --force --interactive .
     """
 }
 
@@ -693,16 +695,17 @@ workflow {
 	    mapping_ch = generate_mapping.out
     }
 
-    // QC stuff
-    fastqc(sample_ch.collect())
-    multiqc(fastqc.out.collect())
-
     // cutadapt
-    if (params.fwd_primer != "" && params.rev_primer != "" && params.seq_read != "") {
+    if (params.seq_read != "") {
         cutadapt(sample_ch.collect(), mapping_ch.metadata_clean)
-        sample_ch = cutadapt.out.trimmed
-        qiime_mapping = cutadapt.out.qiime_metadata
+        trimmed_ch = cutadapt.out.trimmed
+        qiime_mapping = cutadapt.out.qiime_metadata        
     }
+    
+    // QC stuff
+    combined_ch = sample_ch.toList().merge(trimmed_ch)
+    fastqc(combined_ch.collect())
+    multiqc(fastqc.out.collect())
     
     // Qiime stuff
     // assembly (if any), import, and DADA2 are pairedness-dependent
@@ -713,10 +716,10 @@ workflow {
     } else if (params.seq_read == "paired" && params.run_pear == "yes") {
         sampletype = "'SampleData[SequencesWithQuality]'"
         inputformat = 'SingleEndFastqManifestPhred33V2'
-        pear(sample_ch.collect(), mapping_ch.metadata_clean)
-        sample_ch = pear.out.assembled
+        pear(trimmed_ch.collect(), mapping_ch.metadata_clean)
+        trimmed_ch = pear.out.assembled
         qiime_mapping = pear.out.qiime_metadata
-        fastqc_pear(sample_ch)
+        fastqc_pear(trimmed_ch.collect())
         multiqc_pear(fastqc_pear.out.collect())
 
     } else if (params.seq_read == "paired" && params.run_pear == "no") {
@@ -724,18 +727,18 @@ workflow {
         inputformat = 'PairedEndFastqManifestPhred33V2'
     } 
     
-    qiime_import(qiime_mapping, sample_ch.collect(), sampletype, inputformat)
+    qiime_import(qiime_mapping, trimmed_ch.collect(), sampletype, inputformat)
     dada2_denoise(qiime_import.out)
 
     // below bit: conditional readstats merger. A nextflow conditional channel input option would be nice.
     if (params.fwd_primer != "" && params.run_pear == "yes"){
-	merge_readstats_both(dada2_denoise.out.dada2stats, cutadapt.out.counts, pear.out.counts)
+	    merge_readstats_both(dada2_denoise.out.dada2stats, cutadapt.out.counts, pear.out.counts)
     }
     if (params.fwd_primer != "" && params.run_pear == "no"){
-	merge_readstats_cutadapt(dada2_denoise.out.dada2stats, cutadapt.out.counts)
+	    merge_readstats_cutadapt(dada2_denoise.out.dada2stats, cutadapt.out.counts)
     }
-    if (params.fwd_primer == "" && params.run_pear == "yes"){
-	merge_readstats_pear(dada2_denoise.out.dada2stats, pear.out.counts)
+    if (params.fwd_primer == "" && params.run_pear == "yes") {
+        merge_readstats_pear(dada2_denoise.out.dada2stats, pear.out.counts)
     }
     
     assign_taxonomy(classifier_ch, dada2_denoise.out.repseqs_qza)
