@@ -40,7 +40,7 @@ def check_filename_reads(df, errors, seq_arg, pear_arg):
 
 def check_compulsory_headers(df, errors, seq_read, pear):
     # Checks compulsory columns; SAMPLE and Description
-    if df.keys()[0].lower() != "sample-id" and df.keys()[-1].lower() != "description":
+    if df.keys()[0].lower() != "sample-id" or df.keys()[-1].lower() != "description":
         errors.append("First and Last column should be sample-id and description!")
     
     # Check if single or paired reads are in correct format

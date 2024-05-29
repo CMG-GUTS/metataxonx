@@ -111,3 +111,9 @@ def generate_qiime_mapping(metadata, outdir, file_string1, file_string2, reverse
     
     # saving metadata files
     df_final.to_csv("mapping.txt", sep='\t', index=False, header=True)
+
+def checksZeroDivision(num1, num2):
+    if num1 == 0.0 or num2 == 0.0:
+        return 0.0
+    else:
+        return num1 / num2

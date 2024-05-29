@@ -17,6 +17,7 @@ Typical run::
 Run the script with '-h' for a list of options.
 """
 from argparse import ArgumentParser
+from utils.tools import checksZeroDivision
 import sys
 
 ############
@@ -68,6 +69,6 @@ if __name__ == '__main__':
             if skip == 0:
                 new_line = [lineg[0], lineg[1]]
                 for i, count in enumerate([float(element) for element in lineg[2:]]):
-                    new_line.append(f"{count/total_counts[i]}")
+                    new_line.append(f"{checksZeroDivision(count, total_counts[i])}")
                 f.write('\t'.join(new_line) + '\n')
     sys.exit()
