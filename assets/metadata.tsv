@@ -1,0 +1,5 @@
+SAMPLE-ID	FILENAME_fw	FILENAME_rev	RANKSTAT_treatment	DESCRIPTION
+S103_	S103_R1.fastq.gz	S103_R2.fastq.gz	H	
+S103b_	S103b_R1.fastq.gz	S103b_R2.fastq.gz	T	
+S115_	S115_R1.fastq.gz	S115_R2.fastq.gz	H	
+S115b_	S115b_R1.fastq.gz	S115b_R2.fastq.gz	T	

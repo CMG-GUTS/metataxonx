@@ -1,0 +1,281 @@
+---
+title: "Omics Analysis"
+author: "A Gusinac"
+date: "2024-03-18"
+output: pdf_document
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE) 
+```
+
+## Required Library's
+
+```{r}
+library("tidyverse")
+library("biomformat")
+library("phyloseq")
+library("ape")
+library("microViz")
+library("Biostrings")
+library("patchwork")
+library("vegan")
+```
+
+## Load functions
+
+```{r, include = FALSE}
+source("R/99_project-functions.R")
+
+# Utils
+sourceDir(path = "R/utils")
+
+```
+
+## Specify data paths
+
+```{r, eval=FALSE}
+biom_filename <- "data/BiotaViz/relative-table-with-taxonomy.biom"
+metadata_filename <- "data/metadata/metadata.tsv"
+taxonomy_filename <- "data/classifier/vsearch/taxonomy/biotaviz_taxonomy.tsv"
+tree_filename <- "data/phylogeny/phylogenetic_tree/tree.nwk"
+refseq_filename <- "data/denoise/representative_sequences/unfiltered/sequences.fasta"
+  
+```
+
+## Constructing physeq
+```{r, eval=FALSE}
+biom_data <- import_biom(BIOMfilename = biom_filename)
+metadata <- import_qiime_sample_data(metadata_filename)
+tree <- read_tree(tree_filename)
+refseq <- readDNAStringSet(refseq_filename)
+
+ps <- construct_ps(biom_data, metadata, tree, refseq)
+#saveRDS(ps, "../data/RDS/radboudumc_relative_phyloseq.rds")
+
+```
+
+# General analysis flow
+## Loading phyloseq objects
+
+```{r, , echo = TRUE}
+ps_abs <- readRDS("data/RDS/01_absolute_phyloseq.rds")
+
+```
+
+## Standard Data wrangling
+```{r, echo = TRUE}
+# data wrangling
+#------------------------------------------------------------------------------#
+ps_abs_bac <- ps_abs %>% 
+  subset_taxa(Domain == "Bacteria") %>% 
+  removeZeros()
+
+# normalize by bacterial domain
+ps_rel_bac <- ps_abs_bac %>% 
+  transform_sample_counts(function(x) x / sum(x))
+
+```
+
+## Rankstat
+### Classified ASVs per taxonomic rank
+
+```{r}
+# subsetting only for positive samples
+ps_abs_bac_positive <- ps_abs_bac %>% 
+  subset_samples(RANKSTAT_treatment != "control") %>% 
+  removeZeros()
+
+ps_rankstat(ps_abs_bac_positive)
+
+```
+
+## Proportion of classified ASVs per taxonomic rank for each sample
+
+```{r}
+ps_composition(ps_abs_bac, tax_level = "Genus", col_name = "RANKSTAT_treatment", taxa_n = 15, col_order = "all")
+
+
+ggsave(filename = "results/Composition.png",
+       plot = comb_plot,
+       width = 30,
+       height = 18,
+       limitsize = FALSE)
+
+```
+
+### Spearman correlation (non-paramatic test)
+
+```{r}
+# Spearman correlation
+
+top15_taxa <- ps_rel_bac %>% 
+  tax_fix(anon_unique = FALSE,
+          verbose = FALSE,
+          unknowns = c("uncultured")) %>% 
+  tax_glom(taxrank = "Genus", NArm = FALSE) %>% 
+  tax_top(n = 15)
+
+abun_tab <- otu_table(ps_rel_bac)[top15_taxa, ] %>% 
+  as.matrix() %>% 
+  as.data.frame() %>% 
+  pivot_longer(cols = everything())
+
+spearman_cor <- cor.test(maastricht_abun$value, radboud_abun$value, method = "spearman")
+kruskal_test <- kruskal.test(maastricht_abun$value ~ radboud_abun$value)
+
+spearman_cor
+kruskal_test
+
+```
+# Analysis of samples generated from metataxonomics workflow
+
+## Alpha diversity 
+### Shannon index graph: data from nextflow run
+```{r}
+df_shannon <- read_csv(file = "data/diversity_metrics/alpha_rarefaction/shannon.csv")
+
+alpha_div_plot <- df_shannon %>% 
+  pivot_longer(cols = starts_with("depth-"),
+               names_to = "iters",
+               values_to = "alpha_div") %>% 
+  ggplot(mapping = aes(x = RANKSTAT_treatment,
+                       y = alpha_div,
+                       fill = RANKSTAT_treatment)) +
+  geom_violin(width = 1.4) +
+  geom_boxplot(width = 0.1, 
+               color = "black",
+               alpha = 0.2) +
+  theme_bw() +
+  theme(legend.position = "none") +
+  labs(title = "Alpha diversity",
+       x = "sample groups",
+       y = "Shannon Index")
+
+ggsave(filename = "results/Shannon_index.png",
+       plot = alpha_div_plot,
+       width = 5,
+       height = 5,
+       limitsize = FALSE)
+```
+
+
+## Distribution of Genera among sample groups (neat)
+```{r}
+unique_groups <- unique(sample_data(ps_rel_bac)$RANKSTAT_treatment) 
+
+Rel_abun_Genera <- ps_abs_bac %>% 
+  tax_fix(unknowns = c("uncultured")) %>% 
+  merge_samples(group = "RANKSTAT_treatment") %>% 
+  comp_barplot(
+    tax_level = "Genus", n_taxa = 15,
+    sample_order = unique_groups,
+    bar_width = 0.8
+  ) +
+  coord_flip() + 
+  labs(y = "Relative Abundance", y = NULL)
+
+ggsave(filename = "results/rel_abun_Genera.png",
+       plot = Rel_abun_Genera,
+       width = 10,
+       height = 5,
+       limitsize = FALSE)
+
+
+```
+## Heatmap of spearman correlation between categorical vs continuous data
+
+```{r}
+
+png("results/spearman_cor_heatmap.png", width=7,height=7,units="in",res=1200)
+cor_heatmap_plot(ps_rel_bac, tax_level = "Genus")
+dev.off()
+
+```
+
+
+## Distribution of Pseudomonas ASVs, relative and absolute in treatment groups
+
+```{r}
+# Subset by taxa: Change Subset_taxa by desired filter rank
+#------------------------------------------------------------------------------#
+ps <- ps_abs_bac %>% 
+  subset_taxa(Genus == "Pseudomonas") %>% 
+  removeZeros()
+
+# Computes sum of ASVs per sample
+target_ps <- ps %>% 
+  ps_mutate(nASVs = sample_sums(ps))
+
+# Defines unique groups
+unique_groups <- unique(sample_data(target_ps)$RANKSTAT_treatment) 
+
+# Subsets by RANKSTAT_treatment into ASVs and Phyloseq objects
+ASVs_list <- list()
+ps_list <- list()
+
+for (variable in unique_groups) {
+  ps_subset <- subset_samples(target_ps, RANKSTAT_treatment == {{variable}}) %>% removeZeros()
+  ASV_subset <- ps_subset %>% removeZeros() %>% taxa_names()
+  
+  # store in list
+  ps_list[[variable]] <- ps_subset
+  ASVs_list[[variable]] <- ASV_subset
+}
+
+# Finds unique ASVs pairwise between treatment groups
+group_combi <- combn(x = unique_groups, m = 2)
+ASVs_diff_list <- list()
+for ( i in seq(ncol(group_combi))) {
+  pair <- group_combi[, i]
+  ASVs_diff <- setdiff(ASVs_list[[pair[2]]], ASVs_list[[pair[1]]])
+  ASVs_diff_list[[paste0(pair[2],"_vs_",pair[1])]] <- ASVs_diff
+}
+
+# Plots original relative abundance and absolute abundance side by side
+for (var in unique_groups) {
+  plt <- relative_vs_absolute_plot(ps_list[[var]], tax_target = "Species", sample_format = TRUE)
+
+  ggsave(filename = paste0("../results/Genus_", var, ".png"),
+       plot = plt,
+       width = 20,
+       height = 15,
+       limitsize = FALSE)
+}
+
+```
+
+## Principal Coordinate Analysis with Weighted Unifrac distances
+```{r}
+# normalized by bacterial domain
+comb_plot <- ps_pcoa(ps = ps_rel_bac, dist.metric = "wunifrac", RANKSTAT_col = "RANKSTAT_treatment")
+
+ggsave("results/pcoa_test.png",
+       plot = comb_plot,
+       width = 15,
+       height = 5)
+
+```
+
+## Heatmap log transformed without Pseudomonas
+```{r}
+sample_names(ps_abs_bac) <- sample_names(ps_abs_bac) %>%
+  str_extract("(^[^_]*_[^_]*_?\\d)|(C\\d?)")
+
+ps <- ps_abs_bac %>% 
+  subset_samples(RANKSTAT_treatment != "control") %>% 
+  subset_taxa(Genus != "Pseudomonas") %>% 
+  transform_sample_counts(function(x) x / sum(x)) %>% 
+  removeZeros()
+
+source("R/utils/ps_heatmap.R")
+
+fold_heatmap <- ps_heatmap(ps)
+
+ggsave(filename = "results/heatmap_2fold_change.png",
+       plot = fold_heatmap,
+       width = 10,
+       height = 10,
+       limitsize = FALSE)
+
+```
