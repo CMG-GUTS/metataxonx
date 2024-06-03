@@ -58,10 +58,15 @@ process cutadapt {
     path("mapping.txt"), emit: qiime_metadata
     
     script:
+    def fwd_primer = params.fwd_primer == false ? "$projectDir/assets/primers.fasta" : params.fwd_primer
+    def rev_primer = params.rev_primer == false ? "$projectDir/assets/primers.fasta" : params.rev_primer
+    def fwd_adapter = params.fwd_adapter == false ? "$projectDir/assets/adapters.fasta" : params.fwd_adapter
+    def rev_adapter = params.rev_adapter == false ? "$projectDir/assets/adapters.fasta" : params.rev_adapter
+
     """
     python3.11 $projectDir/bin/python/run_cutadapt.py \
-    -fp ${params.fwd_primer} -rp ${params.rev_primer} \
-    -fa ${params.fwd_adapter} -ra ${params.rev_adapter} \
+    -fp ${fwd_primer} -rp ${rev_primer} \
+    -fa ${fwd_adapter} -ra ${rev_adapter} \
     -c ${params.cpus} -m ${metadata_clean} -s ${params.seq_read} \
     --pear ${params.run_pear}
     """
@@ -654,32 +659,33 @@ process merge_readstats_cutadapt  {
     """
 }
 
-// process omics_analysis {
-//     container "script_dependencies:v2.0"
+process omics_analysis {
+    container "script_dependencies:v2.0"
 
-//     publishDir "${params.outdir}/analysis", mode: 'copy'
+    publishDir "${params.outdir}/analysis", mode: 'copy'
 
-//     input:
-//     file(metadata_clean)
-//     file(biom_taxonomy)
-//     file(rooted_tree_newick)
-//     file(sequences_fasta)
+    input:
+    file(metadata_clean)
+    file(biom_taxonomy)
+    file(rooted_tree_newick)
+    file(sequences_fasta)
 
-//     output:
-//     path("*.png")
-//     path("*.pdf")
-//     path("*.html")
+    output:
+    path("*.png")
+    path("*.pdf")
+    path("*.rds")
 
-//     script:
-//     """
-//     Rscript $projectDir/bin/R/automated-omics-analysis/R/00_main.R \
-//         --metadata ${metadata_clean} \
-//         --biom ${biom_taxonomy} \
-//         --tree ${rooted_tree_newick} \
-//         --refseq ${sequences_fasta} \
-//         --colname ${params.rankstat_col}
-//     """
-// }
+    script:
+    """
+    Rscript $projectDir/bin/R/analysis_pipeline/00_main.R \
+        --metadata ${metadata_clean} \
+        --biom ${biom_taxonomy} \
+        --tree ${rooted_tree_newick} \
+        --refseq ${sequences_fasta} \
+        --colname ${params.rankstat_col} \
+        --outdir ${params.outdir}/analysis/
+    """
+}
 
 
 
@@ -705,9 +711,11 @@ workflow {
         trimmed_ch = cutadapt.out.trimmed
         qiime_mapping = cutadapt.out.qiime_metadata        
     }
-    
+        
     // Quality control on both untrimmed and trimmed reads
     combined_ch = sample_ch.toList().merge(trimmed_ch)
+
+    // QC
     fastqc(combined_ch.collect())
     multiqc(fastqc.out.collect())
     
@@ -735,13 +743,13 @@ workflow {
     dada2_denoise(qiime_import.out)
 
     // below bit: conditional readstats merger. A nextflow conditional channel input option would be nice.
-    if (params.fwd_primer != "" && params.run_pear == "yes"){
+    if (params.fwd_primer != false && params.run_pear == "yes"){
 	    merge_readstats_both(dada2_denoise.out.dada2stats, cutadapt.out.counts, pear.out.counts)
     }
-    if (params.fwd_primer != "" && params.run_pear == "no"){
+    if (params.fwd_primer != false && params.run_pear == "no"){
 	    merge_readstats_cutadapt(dada2_denoise.out.dada2stats, cutadapt.out.counts)
     }
-    if (params.fwd_primer == "" && params.run_pear == "yes") {
+    if (params.fwd_primer == false && params.run_pear == "yes") {
         merge_readstats_pear(dada2_denoise.out.dada2stats, pear.out.counts)
     }
     
@@ -757,7 +765,7 @@ workflow {
 
     // post-qiime visualization and statistics
     sankeyplots(mapping_ch.metadata_clean, biom_to_biotaviz.out.biotaviz)
-    // if (params.rankstat_col != "") {
-    //     omics_analysis(mapping_ch.metadata_clean, phylogeny.out.rooted_tree_newick, combine_taxonomy_biom.out.biom_taxonomy, dada2_denoise.out.sequences_fasta)
-    // }
+    if (params.rankstat_col != "") {
+        omics_analysis(mapping_ch.metadata_clean, combine_taxonomy_biom.out.biom_taxonomy, phylogeny.out.rooted_tree_newick, dada2_denoise.out.sequences_fasta)
+    }
 }

@@ -50,52 +50,53 @@ def write_counts(metadata, outfolder, outname, reverse=None):
 
 def adapter_trimming(sample, forward, options, reverse=None):
     if os.path.basename(options['fw_adapter']) == "adapters.fasta":
-        adapter_option = f"--minimum-length 50 -a file:{options['fw_adapter']}"
+        adapter_option = f"--discard-untrimmed --minimum-length 20 -a file:{options['fw_adapter']}"
         if reverse:
             adapter_option += f" -A file:{options['rev_adapter']}"
-    if re.search("[ATGC]", options['fw_adapter']):
-        adapter_option = f"--minimum-length 50 -a {options['fw_adapter']}"
+    elif re.search("[ATGC]", options['fw_adapter']):
+        adapter_option = f"-a {options['fw_adapter']}"
         if reverse:
             adapter_option += f" -A {options['rev_adapter']}"
     else:
         adapter_option = ""
 
-    command = f"cutadapt -j {options['cpus']} --discard-untrimmed {adapter_option} -o trimmed/{sample}_R1.fastq.gz -p trimmed/{sample}_R2.fastq.gz {forward} {reverse}"
+    command = f"cutadapt -j {options['cpus']} {adapter_option} -o trimmed/{sample}_R1.fastq.gz -p trimmed/{sample}_R2.fastq.gz {forward} {reverse}"
     return(command)  
 
 def primer_trimming(sample, forward, options, reverse=None):
     if os.path.basename(options['fw_primer']) == "primers.fasta":
-        primer_option = f"-g file:{options['fw_primer']}"
+        primer_option = f"--discard-untrimmed --minimum-length 20 -g file:{options['fw_primer']}"
         if reverse:
             primer_option += f" -G file:{options['rev_primer']}"
-    if re.search("[ATGC]", options['fw_primer']):
+    elif re.search("[ATGC]", options['fw_primer']):
         primer_option = f"-g {options['fw_primer']}"
         if reverse:
             primer_option += f" -G {options['rev_primer']}"
     else:
         primer_option = ""
 
-    command = f"cutadapt -j {options['cpus']} --discard-untrimmed {primer_option} -o trimmed/{sample}_R1.fastq.gz -p trimmed/{sample}_R2.fastq.gz {forward} {reverse}"
-    return(command)    
+    command = f"cutadapt -j {options['cpus']} {primer_option} -o trimmed/{sample}_R1.fastq.gz -p trimmed/{sample}_R2.fastq.gz {forward} {reverse}"
+    return(command)
 
 def run_cutadapt(sample, forward, options, reverse=None):
-    if options['fw_adapter'] != "false" and options['fw_primer'] != "false":
+    if options['fw_adapter'] != "skip" and options['fw_primer'] != "skip":
         adapter_cmd = adapter_trimming(sample, forward, options, reverse)
         primer_cmd = primer_trimming(sample, "./trimmed/" + sample + "_R1.fastq.gz", options, "./trimmed/" + sample + "_R2.fastq.gz")
         result = os.system(adapter_cmd)
         if result != 0:
             sys.stderr.write("Error running cutadapt, aborting\n")
             sys.exit(1)
-        result = os.system(primer_cmd)
-    elif options['fw_adapter'] != "false":
+        result = os.system(primer_cmd)   
+    elif options['fw_adapter'] != "skip":
         cmd = adapter_trimming(sample, forward, options, reverse)
         result = os.system(cmd)
-    elif options['fw_primer'] != "false":
+    elif options['fw_primer'] != "skip":
         cmd = primer_trimming(sample, forward, options, reverse)
         result = os.system(cmd)
     else:
-        sys.stderr.write(f"'fw_adapter' and 'fw_primer' with/without reverse are empty!")
-        sys.exit(1)
+        # place holder returns untrimmed
+        cmd = primer_trimming(sample, forward, options, reverse)
+        result = os.system(cmd)
     if result != 0:
         sys.stderr.write("Error running cutadapt, aborting\n")
         sys.exit(1)
@@ -120,6 +121,8 @@ if __name__ == '__main__':
     parser.add_argument('--pear', dest="pear", help="PEAR 'yes' or 'no'", required=True)
     parser.add_argument('-c', dest="cpus", help='number of cpus to us', default=1)
     options = vars(parser.parse_args())
+
+    print(options)
 
     os.mkdir("trimmed")
     metadata = get_metadata(options['metadata'])
