@@ -33,6 +33,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     autoconf automake \
     make \
+    cargo \
     curl wget pgp \ 
     libtool \
     libcurl4-openssl-dev \ 
@@ -121,7 +122,12 @@ RUN Rscript install2.r --error --skipinstalled \
     igraph \
     BiocManager \
     remotes \
+    downloadthis \
     vegan \
+    kableExtra \
+    shiny \
+    data.table \
+    DT \
     && rm -rf /tmp/downloaded_packages
 
 # R dependencies from BiocManager
@@ -133,8 +139,8 @@ RUN Rscript installBioc.r --error --skipinstalled \
     && rm -rf /tmp/downloaded_packages
 
 # R dependencies from Github 
-RUN Rscript installGithub.r david-barnett/microViz \
-    && rm -rf /tmp/downloaded_packages
+# RUN Rscript installGithub.r username\package_name \
+#     && rm -rf /tmp/downloaded_packages
 
 #------------------------------------------------------------------------------------#
 # 4. Setup PhantomJS within PATH
