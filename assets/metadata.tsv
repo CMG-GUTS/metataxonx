@@ -1,5 +1,5 @@
-SAMPLE-ID	FILENAME_fw	FILENAME_rev	RANKSTAT_treatment	DESCRIPTION
-S103_	S103_R1.fastq.gz	S103_R2.fastq.gz	H	
-S103b_	S103b_R1.fastq.gz	S103b_R2.fastq.gz	T	
-S115_	S115_R1.fastq.gz	S115_R2.fastq.gz	H	
-S115b_	S115b_R1.fastq.gz	S115b_R2.fastq.gz	T	
+SAMPLE-ID	FILENAME_fw	FILENAME_rev	PATIENT-ID	RANKSTAT_treatment	RANKSTAT_test2	CORRELATION_BMI	CORRELATION_weight	PAIREDGROUPBY_treatment	PAIREDTIMEPOINT_cycles	DESCRIPTION
+S103_	S103_R1.fastq.gz	S103_R2.fastq.gz	S103	H	L	22	68	B1	t1	
+S103b_	S103b_R1.fastq.gz	S103b_R2.fastq.gz	S103	T	K	23	80	A1	t2	
+S115_	S115_R1.fastq.gz	S115_R2.fastq.gz	S115	H	L	21	72	B2	t1	
+S115b_	S115b_R1.fastq.gz	S115b_R2.fastq.gz	S115	T	K	24	45	A2	t2	
