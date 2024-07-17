@@ -22,6 +22,7 @@ import csv
 import sys
 import traceback
 import itertools
+import argparse
 
 # Dictionary used to determine the numbers for linking nodes (based on taxonomic rank)
 taxonomic_ranks_dict = {
@@ -349,27 +350,28 @@ def sample_average_all():
 
 
 if __name__ == "__main__":
-    # Parameter for filtering on relative abundance
-    tax_filter = 0.01
-    # If true, generate a file for each sample column from input file
-    sample_repeat = "false"
-    # If true, generate a file for each unique combination of the rankstat
-    combine_rankstat = "false"
-    # Variables which need to be set beforehand
-    average_all_samples = []
-    sample = 0
-    biotavizfile = "relative-table.biotaviz_relative_abundance.txt"
-    mappingfile = "Metadata.tsv"
+    parser = argparse.ArgumentParser(description="Sankey file preparation", add_help=True)
+    parser.add_argument('--taxa-filter', dest='tax_filter', help='Taxa filter', default=0.01, type=float)
+    parser.add_argument('--sample-repeat', dest='sample_repeat', help='Sample repeat, default is false', default="false")
+    parser.add_argument('--combine-rankstat', dest='combine_rankstat', help='Combine rankstat, default is false', default="false")
+    parser.add_argument('-i', dest='infile', help='name of input file', required=True)
+    parser.add_argument('-m', dest='mapping', help='name of mapping file', required=True)
+    options = vars(parser.parse_args())
+
+    # Global variables
     filename_combination = ""
+    biotavizfile = options['infile']
+    sample = 0
+    average_all_samples = []
+    tax_filter = options['tax_filter']
+    sample_repeat = options['sample_repeat']
+    mappingfile = options['mapping']
+    combine_rankstat = options['combine_rankstat']
+
+    # Main
+    if 0 > tax_filter < 1:
+        sys.exit(print("Use a number between 0 and 1 as parameter for filtering relative abundance"))
     try:
-        if len(sys.argv) > 1:
-            tax_filter = float(sys.argv[1])
-            sample_repeat = str(sys.argv[2])
-            mappingfile = str(sys.argv[3])
-            combine_rankstat = str(sys.argv[4])
-            biotavizfile = str(sys.argv[5])
-            if tax_filter < 0 or tax_filter > 1:
-                sys.exit(print("Use a number between 0 and 1 as parameter for filtering relative abundance"))
         main(tax_filter, sample_repeat, mappingfile, combine_rankstat)
     except ValueError:
         print("Parameter given was not a valid numeric value: ", traceback.print_exc())

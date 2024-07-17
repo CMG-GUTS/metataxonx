@@ -51,7 +51,7 @@ if __name__ == '__main__':
     samples.sort()
 
     # Write mapping file
-    with open("metadata.tsv", "w") as outfile:
+    with open(options["outfile"], "w") as outfile:
         # Create header column
         outfile.write("\t".join(['SAMPLE-ID', 'FILENAME_fw', 'FILENAME_rev', 'DESCRIPTION']) + '\n')
 

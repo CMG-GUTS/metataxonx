@@ -54,7 +54,7 @@ def adapter_trimming(sample, forward, options, reverse=None):
         if reverse:
             adapter_option += f" -A file:{options['rev_adapter']}"
     elif re.search("[ATGC]", options['fw_adapter']):
-        adapter_option = f"-a {options['fw_adapter']}"
+        adapter_option = f"--discard-untrimmed --minimum-length 20 -a {options['fw_adapter']}"
         if reverse:
             adapter_option += f" -A {options['rev_adapter']}"
     else:
@@ -69,7 +69,7 @@ def primer_trimming(sample, forward, options, reverse=None):
         if reverse:
             primer_option += f" -G file:{options['rev_primer']}"
     elif re.search("[ATGC]", options['fw_primer']):
-        primer_option = f"-g {options['fw_primer']}"
+        primer_option = f"--discard-untrimmed --minimum-length 20 -g {options['fw_primer']}"
         if reverse:
             primer_option += f" -G {options['rev_primer']}"
     else:
