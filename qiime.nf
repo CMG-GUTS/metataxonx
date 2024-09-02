@@ -22,6 +22,8 @@ Qiim2 workflow
 Loosly based on CMBI - RadboudUMC DSL1 code
 */
 
+print(params.reads)
+
 // add pear stats to dada2 stats file
 // add cutadapt stats to stats file
 
@@ -590,7 +592,7 @@ process sankeyplots  {
 
     output:
     path("*.html")
-    path("*.png")
+    path("*.png"), emit: sankey_image
 
     script:
     """
@@ -613,7 +615,7 @@ process merge_readstats_both  {
     file(pear_stats)
 
     output:
-    path("read_stats.txt")
+    path("read_stats.txt"), emit: read_stats
     
     script:
     """
@@ -633,7 +635,7 @@ process merge_readstats_pear  {
     file(pear_stats)
 
     output:
-    path("read_stats.txt")
+    path("read_stats.txt"), emit: read_stats
     
     script:
     """
@@ -653,7 +655,7 @@ process merge_readstats_cutadapt  {
     file(cutadapt_stats)
 
     output:
-    path("read_stats.txt")
+    path("read_stats.txt"), emit: read_stats
     
     script:
     """
@@ -671,6 +673,11 @@ process omics_analysis {
     file(biom_taxonomy)
     file(rooted_tree_newick)
     file(sequences_fasta)
+    file(read_stats)
+    file(sankey_image)
+
+    output:
+    file("report.html")
 
     script:
     """
@@ -683,10 +690,27 @@ process omics_analysis {
     """
 }
 
-
+// importing java API utils
+import java.nio.file.Files
+import java.nio.file.Paths
 
 workflow {
-    sample_ch = Channel.fromPath("${params.reads}",  checkIfExists:true)
+    try {
+        // Implements automatic directory file fetching
+        def path = Paths.get(params.reads).toAbsolutePath().toString()
+        def basename = new File(path).getName()
+
+        if (Files.isDirectory(Paths.get(path))) {
+            sample_ch = Channel.fromPath("${params.reads}/*",  checkIfExists:true)
+        } else if (!basename.isEmpty()){
+            sample_ch = Channel.fromPath("${params.reads}",  checkIfExists:true)
+        } else {
+            throw new IllegalArgumentException("No matching path found.")
+        }
+    } catch (Exception e) {
+        println("Error: ${e.message}")
+    }
+
     classifier_ch = Channel.fromPath(params.classifier)
 
     // mapping file stuff
@@ -740,12 +764,15 @@ workflow {
     // below bit: conditional readstats merger. A nextflow conditional channel input option would be nice.
     if (params.fwd_primer != false && params.run_pear == "yes"){
 	    merge_readstats_both(dada2_denoise.out.dada2stats, cutadapt.out.counts, pear.out.counts)
+        reads_stats_file = merge_readstats_both.out.read_stats
     }
     if (params.fwd_primer != false && params.run_pear == "no"){
 	    merge_readstats_cutadapt(dada2_denoise.out.dada2stats, cutadapt.out.counts)
+        reads_stats_file = merge_readstats_cutadapt.out.read_stats
     }
     if (params.fwd_primer == false && params.run_pear == "yes") {
         merge_readstats_pear(dada2_denoise.out.dada2stats, pear.out.counts)
+        reads_stats_file = merge_readstats_pear.out.read_stats
     }
     
     assign_taxonomy(classifier_ch, dada2_denoise.out.repseqs_qza)
@@ -760,5 +787,5 @@ workflow {
 
     // post-qiime visualization and statistics
     sankeyplots(mapping_ch.metadata_clean, biom_to_biotaviz.out.biotaviz)
-    omics_analysis(mapping_ch.metadata_clean, combine_taxonomy_biom.out.biom_taxonomy, phylogeny.out.rooted_tree_newick, dada2_denoise.out.sequences_fasta)
+    omics_analysis(mapping_ch.metadata_clean, combine_taxonomy_biom.out.biom_taxonomy, phylogeny.out.rooted_tree_newick, dada2_denoise.out.sequences_fasta, reads_stats_file, sankeyplots.out.sankey_image)
 }

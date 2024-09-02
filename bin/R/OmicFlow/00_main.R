@@ -24,12 +24,32 @@ sourceDir(path = paste0(current_path, "utils"))
 
 # Parse command line
 data_00 <- parse_commandline()
-outfile_path <- normalizePath(data_00$outDir)
+#outfile_path <- normalizePath(data_00$outDir)
+outfile_path <- normalizePath(getwd())
 filter_taxa_tab <- normalizePath(paste0(current_path, "../documents/database_filter"))
 
+
 # Fetch additional files from preprocessing pipeline ---------------------------
-preprocess_stats <- readr::read_delim(paste0(outfile_path, "/read_stats.txt"))
-shannon_file <- readr::read_csv(file = paste0(outfile_path, "/alpha_rarefaction/shannon.csv"))
+read_stats_path <- paste0(outfile_path, "/read_stats.txt")
+shannon_path <- paste0(outfile_path, "/alpha_rarefaction/shannon.csv")
+iTOL_image <- paste0(outfile_path, "/biotaviz_sankey_prepfile-AverageAllSamples.png")
+if (file.exists(read_stats_path)) {
+    preprocess_stats <- readr::read_delim(read_stats_path)
+} else {
+    preprocess_stats <- NULL
+}
+
+if (file.exists(shannon_path)) {
+    shannon_file <- readr::read_csv(file = shannon_path)
+} else {
+    shannon_file <- NULL
+}
+
+if (file.exists(iTOL_image)) {
+    iTOL_image <- iTOL_image
+} else {
+    iTOL_image <- NULL
+}
 
 # Taxa to be visualized:
 taxa_names <- c("Phylum", "Family", "Genus")
