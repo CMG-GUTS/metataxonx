@@ -20,7 +20,7 @@ Run the script with '-h' for a list of options.
 """
 
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
-import sys, os, glob
+import sys, os, glob, re
 
 ############
 # SETTINGS #
@@ -42,9 +42,14 @@ if __name__ == '__main__':
 
     options = vars(parser.parse_args())
 
+    # pattern for fastq files
+    #file_extension = r"(\.filt)?\.fastq\.gz"
+    file_extension = r"(_R1.)"
+
     # Fetch forward reads
     fw_files = glob.glob("*R1*")
-    samples = [file.split("R1")[0] for file in fw_files]        
+    # Split only at R1 and remove special characters such as . _ and R1
+    samples = [re.split(file_extension, file, maxsplit=1)[0] for file in fw_files]        
     
     # sort forward and samples
     fw_files.sort()

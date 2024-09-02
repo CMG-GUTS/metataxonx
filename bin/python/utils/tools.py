@@ -1,5 +1,5 @@
 import pandas as pd
-import os, sys, glob, subprocess
+import os, sys, glob, subprocess, re
 
 def get_file_counts(filepath):
     """
@@ -94,11 +94,16 @@ def generate_qiime_mapping(metadata, outdir, file_string1, file_string2, reverse
         - Creates tab-separated 'mapping.txt' file for qiime  
 
     """
-    for files in os.listdir(f"{outdir}/"):
-        if file_string1 in files:
-            metadata = update_metadata(metadata=metadata, sample_id='SAMPLE-ID', file_path=files, column_name='FILENAME_fw', outdir=outdir)
-        if reverse and file_string2 in files:
-            metadata = update_metadata(metadata=metadata, sample_id='SAMPLE-ID', file_path=files, column_name='FILENAME_rev', outdir=outdir)
+    search_file_string1 = re.compile(f"({file_string1})")
+    search_file_string2 = re.compile(f"({file_string2})")
+
+    for file in os.listdir(f"{outdir}/"):
+        string1_match = search_file_string1.search(file) 
+        string2_match = search_file_string2.search(file)
+        if string1_match != None and string1_match.group(0) == file_string1:
+            metadata = update_metadata(metadata=metadata, sample_id='SAMPLE-ID', file_path=file, column_name='FILENAME_fw', outdir=outdir)
+        if reverse and string2_match != None and string2_match.group(0) == file_string2:
+            metadata = update_metadata(metadata=metadata, sample_id='SAMPLE-ID', file_path=file, column_name='FILENAME_rev', outdir=outdir)
 
     columns = ['SAMPLE-ID', 'FILENAME_fw', 'DESCRIPTION']
     if reverse:
