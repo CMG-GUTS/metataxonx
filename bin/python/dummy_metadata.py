@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
     # pattern for fastq files
     #file_extension = r"(\.filt)?\.fastq\.gz"
-    file_extension = r"(_R1.)"
+    file_extension = r"(_R1_)"
 
     # Fetch forward reads
     fw_files = glob.glob("*R1*")
