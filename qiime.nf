@@ -22,14 +22,12 @@ Qiim2 workflow
 Loosly based on CMBI - RadboudUMC DSL1 code
 */
 
-print(params.reads)
-
 // add pear stats to dada2 stats file
 // add cutadapt stats to stats file
 
 process generate_mapping {
     // generate mapping file, including the paths required for Qiime import
-    container "pyrrr:latest"
+    container "$projectDir/containers/singularity/pyrrr.sif"
 
     publishDir params.outdir, mode: 'copy'
     
@@ -47,7 +45,7 @@ process generate_mapping {
 
 process cutadapt {
     // run paired cutadapt
-    container "pyrrr:latest"
+    container "$projectDir/containers/singularity/pyrrr.sif"
     
     input:
     file(filename)
@@ -76,7 +74,7 @@ process cutadapt {
 
 process validate_mapping {
 // validate existing mapping file
-    container "pyrrr:latest"
+    container "$projectDir/containers/singularity/pyrrr.sif"
 
     input:
     file(metadata)
@@ -91,9 +89,9 @@ process validate_mapping {
     """
 }
 
-process fastqc {
+process fastqc_trimmed {
 // run fastqc
-    container "staphb/fastqc:0.11.9"
+    container "$projectDir/containers/singularity/fastqc.sif"
 
     input:
     file(fastqfile)
@@ -107,10 +105,43 @@ process fastqc {
     """
 }
 
-process multiqc {
+process multiqc_trimmed {
 // run multiqc
-    container "pyrrr:latest"
-    publishDir params.outdir, mode: 'copy'
+    container "$projectDir/containers/singularity/pyrrr.sif"
+    publishDir "${params.outdir}/trimmed", mode: 'copy'
+    
+    input:
+    file(qcresults)
+
+    output:
+    path("multiqc*")
+
+    script:
+    """
+    multiqc --force --interactive .
+    """
+}
+
+process fastqc_untrimmed {
+// run fastqc
+    container "$projectDir/containers/singularity/fastqc.sif"
+
+    input:
+    file(fastqfile)
+
+    output:
+    path("*.{zip,html}")
+
+    script:
+    """
+    fastqc ${fastqfile}
+    """
+}
+
+process multiqc_untrimmed {
+// run multiqc
+    container "$projectDir/containers/singularity/pyrrr.sif"
+    publishDir "${params.outdir}/untrimmed", mode: 'copy'
     
     input:
     file(qcresults)
@@ -126,7 +157,7 @@ process multiqc {
 
 process fastqc_pear {
 // run fastqc
-    container "staphb/fastqc:0.11.9"
+    container "$projectDir/containers/singularity/fastqc.sif"
 
     input:
     file(fastqfile)
@@ -142,7 +173,7 @@ process fastqc_pear {
 
 process multiqc_pear {
 // run multiqc
-    container "pyrrr:latest"
+    container "$projectDir/containers/singularity/pyrrr.sif"
     publishDir "${params.outdir}/multiqc_pear", mode: 'copy'
     
     input:
@@ -159,7 +190,7 @@ process multiqc_pear {
 
 process pear {
     // run Paired-End reAd mergeR
-    container "pyrrr:latest"
+    container "$projectDir/containers/singularity/pyrrr.sif"
 
     input:
     file(fastqfile)
@@ -178,7 +209,7 @@ process pear {
 
 process qiime_import {
     // import sequences from fastq en metadata file
-    container "quay.io/qiime2/core:2020.8"
+    container "$projectDir/containers/singularity/qiime2.sif"
 
     publishDir "${params.outdir}/qiime_artefacts/", mode: "copy"
 
@@ -203,8 +234,8 @@ process qiime_import {
 
 process dada2_denoise {
     // denoise with dada2
-    container "quay.io/qiime2/core:2020.8"
-    containerOptions "--cpus ${params.cpus}"
+    container "$projectDir/containers/singularity/qiime2.sif"
+    cpus = params.cpus
 
     publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza}", mode: "copy"
     publishDir params.outdir, pattern: "*.{txt, fasta, biom}", mode: 'copy'
@@ -289,8 +320,7 @@ process dada2_denoise {
 
 process assign_taxonomy {
     // assign taxonomy using sklearn qiime2
-    container "quay.io/qiime2/core:2020.8"
-    containerOptions "--cpus ${params.cpus}"
+    container "$projectDir/containers/singularity/qiime2.sif"
 
     publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza, qzv}", mode: "copy"
     publishDir params.outdir, pattern: "*.tsv", mode: 'copy'
@@ -331,7 +361,7 @@ process assign_taxonomy {
 
 process combine_taxonomy_biom {
 // add taxonomy info to biom file
-    container "quay.io/qiime2/core:2020.8"
+    container "$projectDir/containers/singularity/qiime2.sif"
 
     publishDir params.outdir, mode: 'copy'
 
@@ -354,7 +384,7 @@ process combine_taxonomy_biom {
 
 process biom_to_biotaviz {
 // generate biotaviz from biom-with-taxonomy
-    container "pyrrr:latest"
+    container "$projectDir/containers/singularity/pyrrr.sif"
 
     publishDir params.outdir, mode: 'copy'
 
@@ -388,8 +418,7 @@ process biom_to_biotaviz {
 
 process phylogeny {
     // align ASVs
-    container "quay.io/qiime2/core:2020.8"
-    containerOptions "--cpus ${params.cpus}"
+    container "$projectDir/containers/singularity/qiime2.sif"
 
     publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza, qzv}", mode: "copy"
     publishDir params.outdir, pattern: "*.newick", mode: 'copy'
@@ -421,8 +450,8 @@ process phylogeny {
 
 process alpha_rarefaction {
 // alpha rarefaction
-    container "quay.io/qiime2/core:2020.8"
-    containerOptions "--cpus ${params.cpus}"
+    container "$projectDir/containers/singularity/qiime2.sif"
+    cpus = params.cpus
 
     publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza, qzv}", mode: "copy"
     publishDir params.outdir, pattern: "*.csv", mode: 'copy'
@@ -457,7 +486,7 @@ process alpha_rarefaction {
 
 process minmax {
     // get the minimum and maximum readcounts
-    container "pyrrr:latest"
+    container "$projectDir/containers/singularity/pyrrr.sif"
 
     input:
     file(featuretable)
@@ -476,8 +505,7 @@ process minmax {
 
 process core_diversity {
     // div diversity metrics (alpha + beta)
-    container "quay.io/qiime2/core:2020.8"
-    containerOptions "--cpus ${params.cpus}"
+    container "$projectDir/containers/singularity/qiime2.sif"
 
     publishDir "${params.outdir}/distance_matrices/", pattern: "*.txt", mode: "copy"
     
@@ -514,8 +542,8 @@ process core_diversity {
 
 process merge_alpha_diversity {
     // merge alpha diversity metrics
-    container "quay.io/qiime2/core:2020.8"
-    containerOptions "--cpus ${params.cpus}"
+    container "$projectDir/containers/singularity/qiime2.sif"
+    cpus = params.cpus
 
     publishDir params.outdir, mode: 'copy'
 
@@ -541,8 +569,8 @@ process merge_alpha_diversity {
 
 process beta_rarefaction {
     // beta rarefaction & tree building
-    container "quay.io/qiime2/core:2020.8"
-    containerOptions "--cpus ${params.cpus}"
+    container "$projectDir/containers/singularity/qiime2.sif"
+    cpus = params.cpus
 
     publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza, qzv}", mode: "copy"
     publishDir params.outdir, pattern: "*.newick", mode: 'copy'
@@ -582,7 +610,7 @@ process beta_rarefaction {
 
 process sankeyplots  {
     // merge alpha diversity metrics
-    container "pyrrr:latest"
+    container "$projectDir/containers/singularity/pyrrr.sif"
 
     publishDir "${params.outdir}/sankeyplots", mode: 'copy'
 
@@ -605,7 +633,7 @@ process sankeyplots  {
 
 process merge_readstats_both  {
     // insert cutadapt and pear stats in dada2 stats
-    container "pyrrr:latest"
+    container "$projectDir/containers/singularity/pyrrr.sif"
 
     publishDir "${params.outdir}/", mode: 'copy'
 
@@ -626,7 +654,7 @@ process merge_readstats_both  {
 
 process merge_readstats_pear  {
     // insert pear stats in dada2 stats
-    container "pyrrr:latest"
+    container "$projectDir/containers/singularity/pyrrr.sif"
 
     publishDir "${params.outdir}/", mode: 'copy'
 
@@ -646,7 +674,7 @@ process merge_readstats_pear  {
 
 process merge_readstats_cutadapt  {
     // insert cutadapt stats in dada2 stats
-    container "pyrrr:latest"
+    container "$projectDir/containers/singularity/pyrrr.sif"
 
     publishDir "${params.outdir}/", mode: 'copy'
 
@@ -664,7 +692,7 @@ process merge_readstats_cutadapt  {
 }
 
 process omics_analysis {
-    container "pyrrr:latest"
+    container "$projectDir/containers/singularity/pyrrr.sif"
 
     publishDir "${params.outdir}", mode: 'copy'
 
@@ -701,7 +729,7 @@ workflow {
         def basename = new File(path).getName()
 
         if (Files.isDirectory(Paths.get(path))) {
-            sample_ch = Channel.fromPath("${params.reads}/*",  checkIfExists:true)
+            sample_ch = Channel.fromPath("${params.reads}/*.fastq.gz",  checkIfExists:true)
         } else if (!basename.isEmpty()){
             sample_ch = Channel.fromPath("${params.reads}",  checkIfExists:true)
         } else {
@@ -732,12 +760,18 @@ workflow {
     }
         
     // Quality control on both untrimmed and trimmed reads
-    combined_ch = sample_ch.toList().merge(trimmed_ch)
+    // combined_ch = sample_ch.toList().merge(trimmed_ch)
 
     // QC
-    fastqc(combined_ch.collect())
-    multiqc(fastqc.out.collect())
-    
+    if (params.fwd_primer == "skip" && params.fwd_adapter == "skip") {
+        fastqc_untrimmed(sample_ch.collect())
+        multiqc_untrimmed(fastqc_untrimmed.out.collect())
+    } else {
+        fastqc_untrimmed(sample_ch.collect())
+        multiqc_untrimmed(fastqc_untrimmed.out.collect())
+        fastqc_trimmed(trimmed_ch.collect())
+        multiqc_trimmed(fastqc_trimmed.out.collect())
+    }    
     // Qiime stuff
     // assembly (if any), import, and DADA2 are pairedness-dependent
     if (params.seq_read == "single" || params.nanopore == "yes") {
