@@ -16,7 +16,6 @@ output:
   <img src="RTC_logo.png" alt="Icon" class="icon">
 </div>
 
-
 ```{r setup, include=FALSE} 
 knitr::opts_chunk$set(warning = FALSE, 
                       message = FALSE, 
@@ -27,7 +26,6 @@ knitr::opts_chunk$set(warning = FALSE,
                       fig.alin = "left"
                       ) 
 ```
-
 
 ```{r}
 plot_tabs <- function(plots, method, label_col, label_row) {
@@ -51,6 +49,25 @@ plot_tabs <- function(plots, method, label_col, label_row) {
 
 ```
 
+```{r}
+if (!is.null(untrimmed_multiqc)) {
+  cat("# untrimmed multiqc report")
+  cat(paste0("[LINK to untrimmed mutltiqc report](",untrimmed_multiqc, ")"))
+}
+```
+
+```{r}
+if (!is.null(trimmed_multiqc)) {
+  cat("# trimmed multiqc report")
+  cat(paste0("[LINK to trimmed mutltiqc report](",trimmed_multiqc, ")"))
+}
+```
+```{r}
+if (!is.null(pear_multiqc)) {
+  cat("# PEAR multiqc report")
+  cat(paste0("[LINK to PEAR mutltiqc report](",pear_multiqc, ")"))
+}
+```
 
 ```{r}
 if (!is.null(preprocess_stats)) {
@@ -149,9 +166,9 @@ if (!is.null(heatmap_plots)) {
 ```
 
 ```{r}
-if (file.exists(iTOL_image) == TRUE) {
-  cat("## iTOL \n")
-  knitr::include_graphics(iTOL_image)
+if (!is.null(sankeyplot)) {
+  cat("## sankey plot \n")
+  knitr::include_graphics(sankeyplot)
 }
 ```
 
