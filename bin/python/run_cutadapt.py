@@ -21,10 +21,10 @@ Run the script with '-h' for a list of options.
 
 import argparse
 import sys, os, glob, re
-from utils.tools import get_metadata, generate_qiime_mapping, get_file_counts
+from utils.tools import get_metadata, generate_qiime_mapping, process_write_counts
 from multiprocessing import Pool
 
-def write_counts(metadata, outfolder, outname, reverse=None):
+def write_counts(metadata, outfolder, outname, options, reverse=None):
     # Fetch raw and trimmed files
     untrimmed = glob.glob("*R1*")
     trimmed = [os.path.basename(file) for file in glob.glob(f"{outfolder}/*R1*")]
@@ -34,24 +34,27 @@ def write_counts(metadata, outfolder, outname, reverse=None):
         trimmed += [os.path.basename(file) for file in glob.glob(f"{outfolder}/*R2*")]
         samples += metadata['SAMPLE-ID'].tolist()
 
-    # sort files
+    # Sort files
     untrimmed.sort()
     trimmed.sort()
     samples.sort()
 
-    print("Samples:", samples)
-    print("Untrimmed files:", untrimmed)
-    print("Trimmed files:", trimmed)
+    # Prepare arguments for parallel processing
+    args = []
+    for sample_name, untrim_file, trim_file in zip(samples, untrimmed, trimmed):
+        if untrim_file.startswith(sample_name) and trim_file.startswith(sample_name):
+            args.append((sample_name, untrim_file, trim_file, outfolder))
 
-    # Writes output
+
+    # Use multiprocessing.Pool to parallelize the processing
+    with Pool(processes=int(options["cpus"])) as pool:
+        results = pool.map(process_write_counts, args)
+
+    # Write output
     with open(outname, 'w') as f:
         f.write("\t".join(['sample', 'input', 'trimmed']) + '\n')
-        for (sample_name, untrim_file, trim_file) in zip(samples, untrimmed, trimmed):
-            if untrim_file.startswith(sample_name) and trim_file.startswith(sample_name):
-                precount = get_file_counts(untrim_file)
-                postcount = get_file_counts(f'{outfolder}/{trim_file}')
-                f.write("\t".join([sample_name, str(precount), str(postcount)]) + '\n')
-
+        for result in results:
+            f.write(result)
 
 def adapter_trimming(sample, forward, options, reverse=None):
     if os.path.basename(options['fw_adapter']) == "adapters.fasta":
@@ -65,7 +68,7 @@ def adapter_trimming(sample, forward, options, reverse=None):
     else:
         adapter_option = ""
 
-    command = f"cutadapt -j 4 {adapter_option} -o trimmed/{sample}_R1.fastq.gz -p trimmed/{sample}_R2.fastq.gz {forward} {reverse}"
+    command = f"cutadapt -j 1 {adapter_option} -o trimmed/{sample}_R1.fastq.gz -p trimmed/{sample}_R2.fastq.gz {forward} {reverse}"
     return(command)  
 
 def primer_trimming(sample, forward, options, reverse=None):
@@ -80,7 +83,7 @@ def primer_trimming(sample, forward, options, reverse=None):
     else:
         primer_option = ""
 
-    command = f"cutadapt -j 4 {primer_option} -o trimmed/{sample}_R1.fastq.gz -p trimmed/{sample}_R2.fastq.gz {forward} {reverse}"
+    command = f"cutadapt -j 1 {primer_option} -o trimmed/{sample}_R1.fastq.gz -p trimmed/{sample}_R2.fastq.gz {forward} {reverse}"
     return(command)
 
 def run_cutadapt(sample, forward, options, reverse=None):
@@ -106,10 +109,9 @@ def run_cutadapt(sample, forward, options, reverse=None):
         sys.stderr.write("Error running cutadapt, aborting\n")
         sys.exit(1)
 
-def process_sample(args):
+def process_cutadapt(args):
     sample, fw, rev, options, metadata = args
     run_cutadapt(sample=sample, forward=fw, reverse=rev, options=options)
-    generate_qiime_mapping(metadata=metadata, file_string1="R1", file_string2="R2", outdir="trimmed", reverse=rev)
 
 ############
 # SETTINGS #
@@ -140,10 +142,11 @@ if __name__ == '__main__':
             args.append((sample, fw, rev, options, metadata))
 
         with Pool(processes=int(options["cpus"])) as pool:
-            pool.map(process_sample, args)
+            pool.map(process_cutadapt, args)
         
         # Create stats output
-        write_counts(metadata, "trimmed", "cutadapt_counts.txt", reverse=True)
+        write_counts(metadata, "trimmed", "cutadapt_counts.txt", options=options, reverse=True)
+        generate_qiime_mapping(metadata=metadata, file_string1="R1", file_string2="R2", outdir="trimmed", reverse=True)
     
     elif options['seq_read'] == 'single' and options['pear'] == "no":
         samples = zip(metadata['SAMPLE-ID'], metadata['FILENAME_fw'])
@@ -152,9 +155,10 @@ if __name__ == '__main__':
             args.append((sample, fw, None, options, metadata))
 
         with Pool(processes=int(options["cpus"])) as pool:
-            pool.map(process_sample, args)
+            pool.map(process_cutadapt, args)
 
         # Create stats output
-        write_counts(metadata, "trimmed", "cutadapt_counts.txt", reverse=False)
+        write_counts(metadata, "trimmed", "cutadapt_counts.txt", options=options, reverse=False)
+        generate_qiime_mapping(metadata=metadata, file_string1="R1", file_string2="R2", outdir="trimmed", reverse=False)
 
 

@@ -122,3 +122,9 @@ def checksZeroDivision(num1, num2):
         return 0.0
     else:
         return num1 / num2
+    
+def process_write_counts(args):
+    sample_name, untrim_file, trim_file, outfolder = args
+    precount = get_file_counts(untrim_file)
+    postcount = get_file_counts(f'{outfolder}/{trim_file}')
+    return f"{sample_name}\t{precount}\t{postcount}\n"

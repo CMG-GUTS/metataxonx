@@ -101,7 +101,7 @@ process fastqc_trimmed {
 
     script:
     """
-    fastqc ${fastqfile}
+    ls * | parallel -j ${params.cpus} --verbose "fastqc {}"
     """
 }
 
@@ -134,7 +134,7 @@ process fastqc_untrimmed {
 
     script:
     """
-    fastqc ${fastqfile}
+    ls * | parallel -j ${params.cpus} --verbose "fastqc {}"
     """
 }
 
@@ -167,7 +167,7 @@ process fastqc_pear {
 
     script:
     """
-    fastqc ${fastqfile}
+    ls * | parallel -j ${params.cpus} --verbose "fastqc {}"
     """
 }
 
@@ -203,7 +203,7 @@ process pear {
 
     script:
     """
-    nice -${params.niceness} python3.11 $projectDir/bin/python/run_pear.py -m ${metadata_clean}
+    nice -${params.niceness} python3.11 $projectDir/bin/python/run_pear.py -m ${metadata_clean} --cpu ${params.cpus}
     """
 }
 
@@ -763,15 +763,15 @@ workflow {
     // combined_ch = sample_ch.toList().merge(trimmed_ch)
 
     // QC
-    // if (params.fwd_primer == "skip" && params.fwd_adapter == "skip") {
-    //     fastqc_untrimmed(sample_ch.collect())
-    //     multiqc_untrimmed(fastqc_untrimmed.out.collect())
-    // } else {
-    //     fastqc_untrimmed(sample_ch.collect())
-    //     multiqc_untrimmed(fastqc_untrimmed.out.collect())
-    //     fastqc_trimmed(trimmed_ch.collect())
-    //     multiqc_trimmed(fastqc_trimmed.out.collect())
-    // }    
+    if (params.fwd_primer == "skip" && params.fwd_adapter == "skip") {
+        fastqc_untrimmed(sample_ch.collect())
+        multiqc_untrimmed(fastqc_untrimmed.out.collect())
+    } else {
+        fastqc_untrimmed(sample_ch.collect())
+        multiqc_untrimmed(fastqc_untrimmed.out.collect())
+        fastqc_trimmed(trimmed_ch.collect())
+        multiqc_trimmed(fastqc_trimmed.out.collect())
+    }    
     // Qiime stuff
     // assembly (if any), import, and DADA2 are pairedness-dependent
     if (params.seq_read == "single" || params.nanopore == "yes") {
