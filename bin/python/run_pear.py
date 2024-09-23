@@ -54,11 +54,10 @@ def write_counts(metadata, outfolder, outname, options):
 
 
 def run_pear(sample, forward, reverse):
-    command = f"pear -f {forward} -r {reverse} -o {sample} -y 25G -j 32 -q 30 -v 35 -p 0.0001 > {sample}_pear_stats.txt"""
+    command = f"pear -f {forward} -r {reverse} -o {sample} -y 25G -j 32 -q 30 -v 35 -p 0.0001 > {sample}_pear_stats.txt"
     result = os.system(command)
     if result != 0:
-        sys.stderr.write("Error running pear, aborting\n")
-        sys.exit(2)
+        sys.stderr.write(f"sample: {sample} failed\n")
 
 def process_pear(args):
     sample, fw, rev = args
