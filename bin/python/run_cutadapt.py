@@ -13,7 +13,7 @@ run_cutadapt.py
 
 Typical run::
 
-    run_cutadapt.py -f FWD_PRIMER -r REV_PRIMER -c 64 -m metadata.tsv -s 'paired' --pear 'yes'
+    run_cutadapt.py -f FWD_PRIMER -r REV_PRIMER -c 64 -m metadata.tsv -s 'paired'
 
 Run the script with '-h' for a list of options.
 
@@ -129,13 +129,12 @@ if __name__ == '__main__':
     parser.add_argument('-ra', dest='rev_adapter', help='rev adapter sequence', required=True)
     parser.add_argument('-m', dest="metadata", help='metadata file', required=True)
     parser.add_argument('-s', dest="seq_read", help='single or paired end sequence reading', required=True)
-    parser.add_argument('--pear', dest="pear", help="PEAR 'yes' or 'no'", required=True)
     parser.add_argument('-c', dest="cpus", help='number of cpus to us', default=1)
     options = vars(parser.parse_args())
 
     os.mkdir("trimmed")
     metadata = get_metadata(options['metadata'])
-    if options['seq_read'] == "paired" or options['pear'] == "yes":
+    if options['seq_read'] == "paired":
         samples = zip(metadata['SAMPLE-ID'], metadata['FILENAME_fw'], metadata['FILENAME_rev'])
         args = []
         for sample, fw, rev in samples:
@@ -148,7 +147,7 @@ if __name__ == '__main__':
         write_counts(metadata, "trimmed", "cutadapt_counts.txt", options=options, reverse=True)
         generate_qiime_mapping(metadata=metadata, file_string1="R1", file_string2="R2", outdir="trimmed", reverse=True)
     
-    elif options['seq_read'] == 'single' and options['pear'] == "no":
+    elif options['seq_read'] == 'single':
         samples = zip(metadata['SAMPLE-ID'], metadata['FILENAME_fw'])
         args = []
         for sample, fw in samples:

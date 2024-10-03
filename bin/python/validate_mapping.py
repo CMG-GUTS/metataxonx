@@ -25,26 +25,26 @@ import pandas as pd
 from pandas.api.types import is_numeric_dtype, is_string_dtype, is_float_dtype
 from utils.tools import get_metadata, add_path
 
-def check_filename_reads(df, errors, seq_arg, pear_arg):
+def check_filename_reads(df, errors, seq_arg):
     for col in df.keys():
         if col.lower().find("FILENAME_fw") == -1 and not df["FILENAME_fw"].isnull().any():
             pass
         else:
             errors.append("metadata filename_fw column missing or empty!")
-        if seq_arg == "paired" or pear_arg == "yes":
+        if seq_arg == "paired":
             if col.lower().find("FILENAME_rev") == -1 and not df["FILENAME_rev"].isnull().any():
                 pass 
             else:
                 errors.append("metadata filename_rev column missing or empty!")
     return errors
 
-def check_compulsory_headers(df, errors, seq_read, pear):
+def check_compulsory_headers(df, errors, seq_read):
     # Checks compulsory columns; SAMPLE and Description
     if df.keys()[0].lower() != "sample-id" or df.keys()[-1].lower() != "description":
         errors.append("First and Last column should be sample-id and description!")
     
     # Check if single or paired reads are in correct format
-    errors = check_filename_reads(df, errors, seq_arg=seq_read, pear_arg=pear)
+    errors = check_filename_reads(df, errors, seq_arg=seq_read)
     
     return df, errors
 
@@ -95,7 +95,6 @@ if __name__ == '__main__':
     parser.add_argument('-i', dest='infile', help='name of input file', required=True, default="mapping.txt")
     parser.add_argument('-p', dest='path', help='path to fastq files', required=False, default="fastq")
     parser.add_argument('-s', dest="seq_read", help='single or paired end sequence reading', required=True)
-    parser.add_argument('--pear', dest="pear", help="PEAR 'yes' or 'no'", required=True)
     parser.add_argument('-d', dest='dummy', help='create dummy filepath columns for qiime', action='store_true', required=False)
     options = vars(parser.parse_args())
     infile = options['infile']
@@ -110,7 +109,7 @@ if __name__ == '__main__':
     errors = []
 
     # the actual checks
-    checked_metadata, errors = check_compulsory_headers(metadata, errors, options['seq_read'], options['pear']) # checks for sample-id, filename_fw, filename_rev
+    checked_metadata, errors = check_compulsory_headers(metadata, errors, options['seq_read']) # checks for sample-id, filename_fw, filename_rev
     errors = generate_corrected_metadata(checked_metadata, errors, options['seq_read'])
 
     # reporting

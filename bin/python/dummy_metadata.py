@@ -13,7 +13,7 @@ Generate Metadata.tsv from folder with fastq files
 
 Typical run::
 
-    dummy_metadata.py -s 'paired' --pear 'yes' -o metadata.tsv
+    dummy_metadata.py -s 'paired' -o metadata.tsv
 
 Run the script with '-h' for a list of options.
 
@@ -35,7 +35,6 @@ if __name__ == '__main__':
     parser.add_argument('-f', dest='fullpath', help='use full path for file columns', action='store_true')
     parser.add_argument('-n', dest='nopath', help='leave out path for fiel columns', action='store_true')
     parser.add_argument('-s', dest="seq_read", help='single or paired end sequence reading', required=True)
-    parser.add_argument('--pear', dest="pear", help="PEAR 'yes' or 'no'", required=True)
     parser.add_argument('-p', dest='manualpath', help='use supplied path for file columns', default="NA")
     parser.add_argument('-a', dest='single', help='set to no when paired-end data supplied', default="yes")
     parser.add_argument('--fastq', dest='fastq_files', help="fastq files", nargs='+')
@@ -61,7 +60,7 @@ if __name__ == '__main__':
         outfile.write("\t".join(['SAMPLE-ID', 'FILENAME_fw', 'FILENAME_rev', 'DESCRIPTION']) + '\n')
 
         # Paired reads populate both fw and rev columns
-        if options['seq_read'] == 'paired' or options['pear'] == 'yes':
+        if options['seq_read'] == 'paired':
             rev_files = glob.glob("*R2*")
             rev_files.sort()
 
