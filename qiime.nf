@@ -411,6 +411,7 @@ process alpha_rarefaction {
     output:
     path("alpha_rarefaction.qzv")
     path("alpha_rarefaction/*")
+    path("alpha_rarefaction/shannon.csv"), emit: shannon_file
 
     input:
     file(table)
@@ -633,6 +634,7 @@ process omics_analysis {
     file(sequences_fasta)
     file(read_stats)
     file(sankey_image)
+    file(shannon_file)
 
     output:
     file("report.html")
@@ -643,8 +645,7 @@ process omics_analysis {
         --metadata ${metadata_clean} \
         --biom ${biom_taxonomy} \
         --tree ${rooted_tree_newick} \
-        --refseq ${sequences_fasta} \
-        --outdir ${params.outdir}
+        --refseq ${sequences_fasta}
     """
 }
 
@@ -736,5 +737,5 @@ workflow {
 
     // post-qiime visualization and statistics
     sankeyplots(mapping_ch.metadata_clean, biom_to_biotaviz.out.biotaviz)
-    omics_analysis(mapping_ch.metadata_clean, combine_taxonomy_biom.out.biom_taxonomy, phylogeny.out.rooted_tree_newick, dada2_denoise.out.rep_seqs_fasta, reads_stats_file, sankeyplots.out.sankey_image)
+    omics_analysis(mapping_ch.metadata_clean, combine_taxonomy_biom.out.biom_taxonomy, phylogeny.out.rooted_tree_newick, dada2_denoise.out.rep_seqs_fasta, reads_stats_file, sankeyplots.out.sankey_image, alpha_rarefaction.out.shannon_file)
 }

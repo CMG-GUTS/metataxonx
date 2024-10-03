@@ -50,26 +50,6 @@ plot_tabs <- function(plots, method, label_col, label_row) {
 ```
 
 ```{r}
-if (!is.null(untrimmed_multiqc)) {
-  cat("# untrimmed multiqc report")
-  cat(paste0("[LINK to untrimmed mutltiqc report](",untrimmed_multiqc, ")"))
-}
-```
-
-```{r}
-if (!is.null(trimmed_multiqc)) {
-  cat("# trimmed multiqc report")
-  cat(paste0("[LINK to trimmed mutltiqc report](",trimmed_multiqc, ")"))
-}
-```
-```{r}
-if (!is.null(pear_multiqc)) {
-  cat("# PEAR multiqc report")
-  cat(paste0("[LINK to PEAR mutltiqc report](",pear_multiqc, ")"))
-}
-```
-
-```{r}
 if (!is.null(preprocess_stats)) {
   cat("# Preprocessing step \n")
   cat("Refer to published paper regarding pipeline\n")
@@ -99,7 +79,7 @@ if (!is.null(shannon_plots)) {
 
 ```{r}
 if (!is.null(pcoa_plots)) {
-  cat("## Beta Diversity: Principal Coordinate Analysis (PCoA) {.tabset}")
+  cat("## Beta Diversity: Principal Coordinate Analysis (PCoA) {.tabset} \n")
   plot_tabs(pcoa_plots, 
             method = "matrix", 
             label_col = colnames(RANKSTAT_data),
@@ -119,7 +99,15 @@ if (!is.null(nmds_plots)) {
 }
 ```
 
-
+```{r}
+if (!is.null(RDA_plots)) {
+  cat("## Redundancy Analysis (RDA) {.tabset} \n")
+  plot_tabs(RDA_plots,
+            method = "matrix",
+            label_col = colnames(RANKSTAT_data),
+            label_row = c("RDA", "PCA"))
+}
+```
 
 ```{r}
 if (!is.null(composition_plots)) {
@@ -296,16 +284,3 @@ DT::datatable(
 )
 
 ```
-
-
-
-<!-- ## Redundancy Analysis (RDA) {.tabset} -->
-<!-- ```{r, fig.width=10, fig.height=10} -->
-<!-- # par(mfrow=c(RANKSTAT_ncol, 2)) -->
-<!-- # for (i in 1:RANKSTAT_ncol) { -->
-<!-- #   RDA_plots[[i, 1]]() -->
-<!-- #   RDA_plots[[i, 2]]() -->
-<!-- # } -->
-
-<!-- ``` -->
-<!-- ## {-} -->

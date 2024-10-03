@@ -138,41 +138,25 @@ if (grepl("00_main.R", commandArgs()[4])) {
     otu_tab <- get_otu(ps = ps_rel, top_n = FALSE)
     meta_tab <- get_meta(ps = ps_rel)
     
-    # Natural log transformation + scaling
-    otu_tab.log <- logn(otu_tab, scalar = 10)
-    
     RDA_plots <- matrix(list(), RANKSTAT_ncol, 2)
     
     for (i in 1:RANKSTAT_ncol) {
       # Fetch column
       col_name <- colnames(RANKSTAT_data)[i]
-      
-      # Construct RDA model
-      mod.rda <- vegan::rda(otu_tab.log ~ get(col_name, meta_tab) + Condition(NULL),
-                            data = meta_tab,
-                            scale = FALSE,
-                            na.action = na.fail,
-                            subset = NULL)
-      
+    
       # Create RDA1 vs PC1 triplot
-      RDA_plots[[1, 1]] <- function() {
-        pairwise_triplot(model = mod.rda,
-                        target_col = col_name,
-                        metadata = meta_tab,
-                        pairwise = FALSE,
-                        choice_dim = c("RDA1", "PC1"))
-        }
-      
+      RDA_plots[[i, 1]] <- triplot(counts = otu_tab,
+                                  metadata = meta_tab,
+                                  metadata.col = col_name,
+                                  pairwise = FALSE,
+                                  choice_dim = c("RDA1", "PC1"))
+
       # Create PC1 vs PC2 triplot
-      RDA_plots[[i, 2]] <- function() {
-        pairwise_triplot(model = mod.rda,
-                        target_col = col_name,
-                        metadata = meta_tab,
-                        pairwise = FALSE,
-                        choice_dim = c("PC1", "PC2"))
-        }
-      
-      
+      RDA_plots[[i, 2]] <- triplot(counts = otu_tab,
+                                  metadata = meta_tab,
+                                  metadata.col = col_name,
+                                  pairwise = FALSE,
+                                  choice_dim = c("PC1", "PC2"))   
     }
   }
 }

@@ -41,8 +41,8 @@ if (RANKSTAT_ncol > 0) {
     
     # Alpha diversity: Shannon index
     shannon_plots[[i]] <- ps_shannon(ps = ps_abs,
-                                            df_shannon = shannon_file,
-                                            col_name = col_name)
+                                     df_shannon = shannon_file,
+                                     col_name = col_name)
 
     # Microbiome composition by all samples
     for (j in 1:nrow) {
@@ -54,9 +54,9 @@ if (RANKSTAT_ncol > 0) {
       
       # Creates composition ggplot as list
       composition_plots[[i, j]] <- composition_plot(df = res$df,
-                                                               palette = res$palette,
-                                                               tax_level = res$tax_rank,
-                                                               title_name = col_name)
+                                                    palette = res$palette,
+                                                    tax_level = res$tax_rank,
+                                                    title_name = col_name)
       
 
     }
