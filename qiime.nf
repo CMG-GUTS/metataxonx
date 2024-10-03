@@ -6,7 +6,7 @@ log.info "output                 : ${params.outdir}"
 log.info "metadata file          : ${params.metadata}"
 log.info "taxonomy classifier    : ${params.classifier}"
 log.info "root taxon             : ${params.root_taxon}"
-log.info "run_pear               : ${params.run_pear}"
+log.info "batch_size             : ${params.batch_size}"
 log.info "nanopore               : ${params.nanopore}"
 log.info "niceness               : ${params.niceness}"
 log.info "Sequence reading       : ${params.seq_read}"
@@ -39,7 +39,7 @@ process generate_mapping {
     
     script: 
     """
-    python3.11 $projectDir/bin/python/dummy_metadata.py -s ${params.seq_read} --pear ${params.run_pear} -o metadata.tsv
+    python3.11 $projectDir/bin/python/dummy_metadata.py -s ${params.seq_read} -o metadata.tsv
     """
 }
 
@@ -66,8 +66,7 @@ process cutadapt {
     python3.11 $projectDir/bin/python/run_cutadapt.py \
     -fp ${fwd_primer} -rp ${rev_primer} \
     -fa ${fwd_adapter} -ra ${rev_adapter} \
-    -c ${params.cpus} -m ${metadata_clean} -s ${params.seq_read} \
-    --pear ${params.run_pear}
+    -c ${params.cpus} -m ${metadata_clean} -s ${params.seq_read}
     """
 }
 
@@ -85,7 +84,7 @@ process validate_mapping {
 
     script:
     """
-    python3.11 $projectDir/bin/python/validate_mapping.py -i ${metadata} -s ${params.seq_read} --pear ${params.run_pear}
+    python3.11 $projectDir/bin/python/validate_mapping.py -i ${metadata} -s ${params.seq_read}
     """
 }
 
@@ -207,91 +206,54 @@ process pear {
     """
 }
 
-process qiime_import {
-    // import sequences from fastq en metadata file
+process dada2_denoise {
+    // denoise with dada2
+    container "$projectDir/containers/singularity/parallel_dada2.sif"
+
+    publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{rds}", mode: "copy"
+
+    input:
+    file(mapping)
+
+    output:
+    path("seq-tab.tsv"), emit: seq_table
+    path("denoising-stats.tsv"), emit: denoising_stats
+    path("rep-seqs.fna"), emit: rep_seqs_fasta
+    path("dada_report.txt")
+
+    script:
+    """
+    Rscript $projectDir/bin/R/parallel_dada2.R --metadata ${mapping} --batch_n ${params.batch_size} --cpus ${params.cpus} > dada_report.txt
+    """
+}
+
+process qiime_import_export {
+    // import sequences from fastq and metadata file
     container "$projectDir/containers/singularity/qiime2.sif"
 
     publishDir "${params.outdir}/qiime_artefacts/", mode: "copy"
 
     input:
-    file(qiime_metadata)
-    file(fastqfile)
-    val(sampletype)
-    val(inputformat)
+    file(seq_table)
+    file(rep_seqs_fasta)
 
     output:
-    file("demux.qza")
-
-    script:
-    """
-    qiime tools import \
-         --type '${sampletype}' \
-         --input-path ${qiime_metadata} \
-         --output-path demux.qza \
-         --input-format ${inputformat}
-    """
-}
-
-process dada2_denoise {
-    // denoise with dada2
-    container "$projectDir/containers/singularity/qiime2.sif"
-    cpus = params.cpus
-
-    publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza}", mode: "copy"
-    publishDir params.outdir, pattern: "*.{txt, fasta, biom}", mode: 'copy'
-
-    input:
-    file(artifact)
-
-    output:
-    path('dada_report.txt')
-    path('representative_sequences.fasta'), emit: sequences_fasta
-    path('denoising_stats.txt'), emit: dada2stats
+    // path('representative_sequences.fasta'), emit: sequences_fasta
     path("table.qza"), emit: asv_qza
-    path("rep-seqs.qza"), emit: repseqs_qza
-    path("denoising-stats.qza"), emit: dada2stats_qza
     path('asv_table_no_taxonomy.biom'), emit: biom_no_taxonomy
+    path('rep-seqs.qza'), emit: repseqs_qza
 
     script:
-    if ( params.run_pear == "yes" || params.nanopore == "yes" || params.seq_read == "single" ) {
-        dadacall = "nice -${params.niceness} qiime dada2 denoise-single \
-            --i-demultiplexed-seqs ${artifact} \
-            --p-trim-left 0 \
-            --p-n-threads 0 \
-            --p-chimera-method \'consensus\' \
-            --p-trunc-len 0 \
-            --p-trunc-q 2 \
-            --p-max-ee 3 \
-            --p-min-fold-parent-over-abundance 2 \
-            --o-table table.qza \
-            --o-representative-sequences rep-seqs.qza \
-            --o-denoising-stats denoising-stats.qza \
-            --verbose \
-            > dada_report.txt"
-    }
-    else {
-        dadacall ="nice -${params.niceness} qiime dada2 denoise-paired \
-            --i-demultiplexed-seqs ${artifact} \
-            --p-trim-left-f 0 \
-            --p-trim-left-r 0 \
-            --p-n-threads 0 \
-            --p-chimera-method \'consensus\' \
-            --p-trunc-len-f 0 \
-            --p-trunc-len-r 0 \
-            --p-trunc-q 2 \
-            --p-max-ee-f 2 \
-            --p-max-ee-r 3 \
-            --p-min-fold-parent-over-abundance 2 \
-            --o-table table.qza \
-            --o-representative-sequences rep-seqs.qza \
-            --o-denoising-stats denoising-stats.qza \
-            --verbose \
-            > dada_report.txt"
-    }
-
     """
-    # run dada2_denoise
-    ${dadacall}
+    # Converts phyloseq biom to qiime compatible biom file
+    biom convert -i ${seq_table} -o table.biom --to-hdf5
+
+    # Convert RDS files from parallel_dada2 into qiime2 formats
+    qiime tools import \
+    --input-path table.biom \
+    --type 'FeatureTable[Frequency]' \
+    --input-format BIOMV210Format \
+    --output-path table.qza    
 
     # convert absolute (raw) count table to biom format
     qiime tools export \
@@ -299,22 +261,11 @@ process dada2_denoise {
         --output-path ./
     mv feature-table.biom asv_table_no_taxonomy.biom
 
-    #denoising stats
-    qiime tools export \
-        --input-path denoising-stats.qza \
-        --output-path ./
-    mv stats.tsv denoising_stats.txt
-
-    #create representative sequences fasta file in qiime artifact
-    qiime feature-table tabulate-seqs \
-        --i-data rep-seqs.qza \
-        --o-visualization rep-seqs.qzv
-
-    #convert artifact to .tsv file
-    qiime tools export \
-        --input-path rep-seqs.qzv \
-        --output-path ./
-    mv sequences.fasta representative_sequences.fasta
+    # representative sequences
+    qiime tools import \
+    --input-path ${rep_seqs_fasta} \
+    --type 'FeatureData[Sequence]' \
+    --output-path rep-seqs.qza
     """
 }
 
@@ -631,7 +582,7 @@ process sankeyplots  {
 }
 
 
-process merge_readstats_both  {
+process merge_readstats_paired  {
     // insert cutadapt and pear stats in dada2 stats
     container "$projectDir/containers/singularity/pyrrr.sif"
 
@@ -643,36 +594,15 @@ process merge_readstats_both  {
     file(pear_stats)
 
     output:
-    path("read_stats.txt"), emit: read_stats
+    path("read_stats.tsv"), emit: read_stats
     
     script:
     """
-    python3.11 $projectDir/bin/python/merge_readstats.py -d ${dada2_stats} -c ${cutadapt_stats} -p ${pear_stats} -o read_stats.txt
+    python3.11 $projectDir/bin/python/merge_readstats.py -d ${dada2_stats} -c ${cutadapt_stats} -p ${pear_stats} -s ${params.seq_read}
     """
 }
 
-
-process merge_readstats_pear  {
-    // insert pear stats in dada2 stats
-    container "$projectDir/containers/singularity/pyrrr.sif"
-
-    publishDir "${params.outdir}/", mode: 'copy'
-
-    input:
-    file(dada2_stats)
-    file(pear_stats)
-
-    output:
-    path("read_stats.txt"), emit: read_stats
-    
-    script:
-    """
-    python3.11 $projectDir/bin/python/merge_readstats.py -d ${dada2_stats} -p ${pear_stats} -o read_stats.txt
-    """
-}
-
-
-process merge_readstats_cutadapt  {
+process merge_readstats_single  {
     // insert cutadapt stats in dada2 stats
     container "$projectDir/containers/singularity/pyrrr.sif"
 
@@ -683,11 +613,11 @@ process merge_readstats_cutadapt  {
     file(cutadapt_stats)
 
     output:
-    path("read_stats.txt"), emit: read_stats
+    path("read_stats.tsv"), emit: read_stats
     
     script:
     """
-    python3.11 $projectDir/bin/python/merge_readstats.py -d ${dada2_stats} -c ${cutadapt_stats} -o read_stats.txt
+    python3.11 $projectDir/bin/python/merge_readstats.py -d ${dada2_stats} -c ${cutadapt_stats} -s ${params.seq_read}
     """
 }
 
@@ -738,7 +668,7 @@ workflow {
     } catch (Exception e) {
         println("Error: ${e.message}")
     }
-
+    trimmed_ch = sample_ch
     classifier_ch = Channel.fromPath(params.classifier)
 
     // mapping file stuff
@@ -774,52 +704,37 @@ workflow {
     }    
     // Qiime stuff
     // assembly (if any), import, and DADA2 are pairedness-dependent
-    if (params.seq_read == "single" || params.nanopore == "yes") {
-        sampletype = "'SampleData[SequencesWithQuality]'"
-        inputformat = 'SingleEndFastqManifestPhred33V2'
-        
-    } else if (params.seq_read == "paired" && params.run_pear == "yes") {
-        sampletype = "'SampleData[SequencesWithQuality]'"
-        inputformat = 'SingleEndFastqManifestPhred33V2'
+    if (params.seq_read == "paired") {
         pear(trimmed_ch.collect(), mapping_ch.metadata_clean)
-        trimmed_ch = pear.out.assembled
-        qiime_mapping = pear.out.qiime_metadata
         fastqc_pear(trimmed_ch.collect())
         multiqc_pear(fastqc_pear.out.collect())
-
-    } else if (params.seq_read == "paired" && params.run_pear == "no") {
-        sampletype = "'SampleData[PairedEndSequencesWithQuality]'"
-        inputformat = 'PairedEndFastqManifestPhred33V2'
-    } 
-    
-    qiime_import(qiime_mapping, trimmed_ch.collect(), sampletype, inputformat)
-    dada2_denoise(qiime_import.out)
-
-    // below bit: conditional readstats merger. A nextflow conditional channel input option would be nice.
-    if (params.fwd_primer != false && params.run_pear == "yes"){
-	    merge_readstats_both(dada2_denoise.out.dada2stats, cutadapt.out.counts, pear.out.counts)
-        reads_stats_file = merge_readstats_both.out.read_stats
-    }
-    if (params.fwd_primer != false && params.run_pear == "no"){
-	    merge_readstats_cutadapt(dada2_denoise.out.dada2stats, cutadapt.out.counts)
-        reads_stats_file = merge_readstats_cutadapt.out.read_stats
-    }
-    if (params.fwd_primer == false && params.run_pear == "yes") {
-        merge_readstats_pear(dada2_denoise.out.dada2stats, pear.out.counts)
-        reads_stats_file = merge_readstats_pear.out.read_stats
+        trimmed_ch = pear.out.assembled
+        qiime_mapping = pear.out.qiime_metadata
     }
     
-    assign_taxonomy(classifier_ch, dada2_denoise.out.repseqs_qza)
-    combine_taxonomy_biom(dada2_denoise.out.biom_no_taxonomy, assign_taxonomy.out.taxonomy_tsv)
-    phylogeny(dada2_denoise.out.repseqs_qza)
+    dada2_denoise(qiime_mapping)
+    qiime_import_export(dada2_denoise.out.seq_table, dada2_denoise.out.rep_seqs_fasta)
+
+    // readstat merger
+    if (params.seq_read == "paired"){
+	    merge_readstats_paired(dada2_denoise.out.denoising_stats, cutadapt.out.counts, pear.out.counts)
+        reads_stats_file = merge_readstats_paired.out.read_stats
+    } else if (params.seq_read == "single") {
+        merge_readstats_single(dada2_denoise.out.denoising_stats, cutadapt.out.counts)
+        reads_stats_file = merge_readstats_single.out.read_stats
+    }
+    
+    assign_taxonomy(classifier_ch, qiime_import_export.out.repseqs_qza)
+    combine_taxonomy_biom(qiime_import_export.out.biom_no_taxonomy, assign_taxonomy.out.taxonomy_tsv)
+    phylogeny(qiime_import_export.out.repseqs_qza)
     biom_to_biotaviz(combine_taxonomy_biom.out)
-    minmax(dada2_denoise.out.biom_no_taxonomy)
-    alpha_rarefaction(dada2_denoise.out.asv_qza, phylogeny.out.rooted_tree_qza, minmax.out.maxcount)
-    core_diversity(mapping_ch.metadata_clean, phylogeny.out.rooted_tree_qza, dada2_denoise.out.asv_qza, minmax.out.mincount)
+    minmax(qiime_import_export.out.biom_no_taxonomy)
+    alpha_rarefaction(qiime_import_export.out.asv_qza, phylogeny.out.rooted_tree_qza, minmax.out.maxcount)
+    core_diversity(mapping_ch.metadata_clean, phylogeny.out.rooted_tree_qza, qiime_import_export.out.asv_qza, minmax.out.mincount)
     merge_alpha_diversity(core_diversity.out.alpha.collect())
-    beta_rarefaction(dada2_denoise.out.asv_qza, mapping_ch.metadata_clean, minmax.out.mincount, phylogeny.out.rooted_tree_qza)
+    beta_rarefaction(qiime_import_export.out.asv_qza, mapping_ch.metadata_clean, minmax.out.mincount, phylogeny.out.rooted_tree_qza)
 
     // post-qiime visualization and statistics
     sankeyplots(mapping_ch.metadata_clean, biom_to_biotaviz.out.biotaviz)
-    omics_analysis(mapping_ch.metadata_clean, combine_taxonomy_biom.out.biom_taxonomy, phylogeny.out.rooted_tree_newick, dada2_denoise.out.sequences_fasta, reads_stats_file, sankeyplots.out.sankey_image)
+    omics_analysis(mapping_ch.metadata_clean, combine_taxonomy_biom.out.biom_taxonomy, phylogeny.out.rooted_tree_newick, dada2_denoise.out.rep_seqs_fasta, reads_stats_file, sankeyplots.out.sankey_image)
 }
