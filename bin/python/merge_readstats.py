@@ -60,10 +60,10 @@ if __name__ == '__main__':
         baseline = single_stats["input"]
 
         # Compute percentage differences
-        single_stats["trimmed%"] = single_stats["trimmed"] / baseline * 100
-        single_stats["filtered%"] = single_stats["filtered"] / baseline * 100
-        single_stats["denoised%"] = single_stats["denoised"] / baseline * 100
-        single_stats["nonchim%"] = single_stats["nonchim"] / baseline * 100
+        single_stats["trimmed%"] = round(single_stats["trimmed"] / baseline * 100, 2)
+        single_stats["filtered%"] = round(single_stats["filtered"] / baseline * 100, 2)
+        single_stats["denoised%"] = round(single_stats["denoised"] / baseline * 100, 2)
+        single_stats["nonchim%"] = round(single_stats["nonchim"] / baseline * 100, 2)
 
         # rearranges column order
         single_stats_final = single_stats[single_headers]
@@ -76,11 +76,11 @@ if __name__ == '__main__':
         baseline = paired_stats["input"]
 
         # Compute percentage differences
-        paired_stats["trimmed%"] = paired_stats["trimmed"] / baseline * 100
-        paired_stats["assembled%"] = paired_stats["assembled"] / baseline * 100
-        paired_stats["filtered%"] = paired_stats["filtered"] / baseline * 100
-        paired_stats["denoised%"] = paired_stats["denoised"] / baseline * 100
-        paired_stats["nonchim%"] = paired_stats["nonchim"] / baseline * 100
+        paired_stats["trimmed%"] = round(paired_stats["trimmed"] / baseline * 100, 2)
+        paired_stats["assembled%"] = round(paired_stats["assembled"] / baseline * 100, 2)
+        paired_stats["filtered%"] = round(paired_stats["filtered"] / baseline * 100, 2)
+        paired_stats["denoised%"] = round(paired_stats["denoised"] / baseline * 100, 2)
+        paired_stats["nonchim%"] = round(paired_stats["nonchim"] / baseline * 100, 2)
 
         # rearranges column order
         paired_stats_final = paired_stats[paired_headers]
