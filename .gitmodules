@@ -1,0 +1,3 @@
+[submodule "bin/R/run-dada2-batch"]
+	path = bin/R/run-dada2-batch
+	url = https://github.com/agusinac/run-dada2-batch.git

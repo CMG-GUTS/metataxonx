@@ -8,9 +8,6 @@ parse_commandline <- function() {
                        optparse::make_option(c("-t", "--tree"),
                                    action = "store",
                                    help="Phylogenetic tree in newick format"),
-                       optparse::make_option(c("-r", "--refseq"),
-                                   action = "store",
-                                   help="Reference sequence in fasta format"),
                        optparse::make_option(c("-o", "--outdir"),
                                    action = "store",
                                    help="Output directory")
@@ -37,19 +34,10 @@ parse_commandline <- function() {
     tree <- NULL
   }
 
-  if (!is.null(opt$refseq)) {
-    if (base::grepl(".fasta$", opt$refseq)) {
-      refseq <- Biostrings::readDNAStringSet(filepath = opt$refseq)
-    }
-  } else {
-    refseq <- NULL
-  }
-
   result <- list(
     metaData = metadata,
     biomData = biom_data,
     treeData = tree,
-    refseqData = refseq,
     outDir = opt$outdir
   )
 

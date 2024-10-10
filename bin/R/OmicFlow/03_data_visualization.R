@@ -5,6 +5,7 @@ nmds_plots <- NULL
 composition_plots <- NULL
 correlation_heatmap_plt <- NULL
 heatmap_plots <- NULL
+RDA_plots <- NULL
 
 ################
 ### RANKSTAT ###
@@ -34,15 +35,15 @@ nrow <- length(taxa_names)
 if (RANKSTAT_ncol > 0) {
 
   composition_plots <- matrix(list(), RANKSTAT_ncol, nrow)
-  shannon_plots <- list()
+  #shannon_plots <- list()
   
   for (i in 1:RANKSTAT_ncol) {
     col_name <- colnames(RANKSTAT_data)[i]
     
     # Alpha diversity: Shannon index
-    shannon_plots[[i]] <- ps_shannon(ps = ps_abs,
-                                     df_shannon = shannon_file,
-                                     col_name = col_name)
+    # shannon_plots[[i]] <- ps_shannon(ps = ps_abs,
+    #                                  df_shannon = shannon_file,
+    #                                  col_name = col_name)
 
     # Microbiome composition by all samples
     for (j in 1:nrow) {
