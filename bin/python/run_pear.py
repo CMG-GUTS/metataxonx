@@ -31,19 +31,23 @@ def write_counts(metadata, outfolder, outname, options):
     assembled = [os.path.basename(file) for file in glob.glob(f"{outfolder}/*fastq.gz")]
     samples = metadata['SAMPLE-ID'].tolist()
 
+    # Remove failed samples
+    samples_cleaned = [sample_name for sample_name in samples for assemble in assembled if assemble.__contains__(sample_name)]
+    input_R1_cleaned = [R1 for sample_name in samples_cleaned for R1 in input_R1 if R1.__contains__(sample_name)]
+
     # sort files
-    input_R1.sort()
+    input_R1_cleaned.sort()
     assembled.sort()
-    samples.sort()
+    samples_cleaned.sort()
 
     # Prepare arguments for parallel processing
     args = []
-    for sample_name, input_file, assembled_file in zip(samples, input_R1, assembled):
+    for sample_name, input_file, assembled_file in zip(samples_cleaned, input_R1_cleaned, assembled):
         if input_file.startswith(sample_name) and assembled_file.startswith(sample_name):
             args.append((sample_name, input_file, assembled_file, outfolder))
 
     # Parallelize processing with multiprocessing.Pool
-    with Pool(processes=int(options['cpus'])) as pool:
+    with Pool(processes=options["cpus"]) as pool:
         results = pool.map(process_write_counts, args)
 
     # write output
@@ -95,4 +99,4 @@ if __name__ == "__main__":
         
     # Generate stats and mapping files
     generate_qiime_mapping(metadata=get_metadata(options['metadata']), file_string1="fastq", file_string2="", outdir="assembled", reverse=False)
-    write_counts(metadata, 'assembled', 'pear_counts.txt', options=options)
+    write_counts(metadata, 'assembled', 'pear_counts.txt', options)
