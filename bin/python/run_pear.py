@@ -47,7 +47,7 @@ def write_counts(metadata, outfolder, outname, options):
             args.append((sample_name, input_file, assembled_file, outfolder))
 
     # Parallelize processing with multiprocessing.Pool
-    with Pool(processes=options["cpus"]) as pool:
+    with Pool(processes=int(options["cpus"])) as pool:
         results = pool.map(process_write_counts, args)
 
     # write output
@@ -56,12 +56,15 @@ def write_counts(metadata, outfolder, outname, options):
         for result in results:
             f.write(result)
 
-
 def run_pear(sample, forward, reverse):
     command = f"pear -f {forward} -r {reverse} -o {sample} -y 25G -j 32 -q 30 -v 35 -p 0.0001 > {sample}_pear_stats.txt"
     result = os.system(command)
     if result != 0:
         sys.stderr.write(f"sample: {sample} failed\n")
+
+def process_seqkit(sample, cpus):
+    command = f"seqkit sample -j {cpus} -s100 -n assembled/{sample} -o assembled/{sample}"
+    os.system(command)
 
 def process_pear(args):
     sample, fw, rev = args
@@ -69,11 +72,13 @@ def process_pear(args):
     os.system(f'mv {sample}.assembled.fastq assembled/{sample}.fastq')
     os.system(f'gzip assembled/{sample}.fastq')
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="PEAR argument parser", add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-m', dest="metadata", help='metadata file', required=True)
     parser.add_argument('--cpu', dest="cpus", help='number of cpu cores', required=True)
+    parser.add_argument('--sub-sampling', dest="sub_sample_size", help='Sub-sampling size for each sample, default uses seed value 100', 
+                        type = int,
+                        default = 1*10**5)
     options = vars(parser.parse_args())
 
     # Creates folder
@@ -95,8 +100,14 @@ if __name__ == "__main__":
     
     with Pool(processes=int(options["cpus"])) as pool:
         pool.map(process_pear, args)
-
         
+    # Sub-sampling for large samples (e.g. NovaSeq)
+    # Replaces assembled pear files by sub-sample
+    # Using divide-and-conquer in case samples are large (i.e. NovaSeq)
+    pear_processed_samples = os.listdir("assembled")
+    for sample in pear_processed_samples:
+        process_seqkit(sample, int(options["cpus"]))
+    
     # Generate stats and mapping files
     generate_qiime_mapping(metadata=get_metadata(options['metadata']), file_string1="fastq", file_string2="", outdir="assembled", reverse=False)
     write_counts(metadata, 'assembled', 'pear_counts.txt', options)
