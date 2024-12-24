@@ -1,0 +1,38 @@
+/*
+CSS file for some formatting options in the main report.Rmd file
+Author: Alem Gusinac
+*/
+
+
+/* 
+Changes the report based on the browser changes
+css formatting for text 
+ */ 
+
+.main-container {
+  width: auto%;
+  height: auto;
+  max-width: 80%;
+  min-width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ss formatting for figures */
+
+img {
+    width: auto;
+    height: auto;
+}
+
+/* css formatting for tabulars */
+
+.table {
+  width: auto;
+  height: auto;
+}
+
+.tabset .figure {
+  width: auto;
+  height: auto;
+}
