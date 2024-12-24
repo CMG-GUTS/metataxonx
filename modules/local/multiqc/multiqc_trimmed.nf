@@ -1,6 +1,4 @@
 process multiqc_trimmed {
-// run multiqc
-    container "$projectDir/containers/singularity/pyrrr.sif"
     publishDir "${params.outdir}/trimmed", mode: 'copy'
     
     input:

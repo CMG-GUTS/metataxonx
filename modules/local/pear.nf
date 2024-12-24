@@ -1,7 +1,4 @@
 process pear {
-    // run Paired-End reAd mergeR
-    container "$projectDir/containers/singularity/pyrrr.sif"
-
     input:
     file(fastqfile)
     file(metadata_clean)
@@ -13,6 +10,9 @@ process pear {
 
     script:
     """
-    nice -${params.niceness} python3.11 $projectDir/bin/python/run_pear.py -m ${metadata_clean} --cpu ${params.cpus}
+    nice -${params.niceness} python3.11 $projectDir/bin/python/run_pear.py \
+        -m ${metadata_clean} \
+        --cpu ${params.cpus} \
+        --sub-sampling ${params.read_sample_size}
     """
 }

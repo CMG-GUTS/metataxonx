@@ -1,7 +1,4 @@
 process cutadapt {
-    // run paired cutadapt
-    container "$projectDir/containers/singularity/pyrrr.sif"
-    
     input:
     file(filename)
     file(metadata_clean)

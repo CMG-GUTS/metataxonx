@@ -1,8 +1,4 @@
 process merge_alpha_diversity {
-    // merge alpha diversity metrics
-    container "$projectDir/containers/singularity/qiime2.sif"
-    cpus = params.cpus
-
     publishDir params.outdir, mode: 'copy'
 
     input:

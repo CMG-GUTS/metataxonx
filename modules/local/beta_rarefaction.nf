@@ -1,12 +1,4 @@
 process beta_rarefaction {
-    // beta rarefaction & tree building
-    container "$projectDir/containers/singularity/qiime2.sif"
-    cpus = params.cpus
-
-    publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza, qzv}", mode: "copy"
-    publishDir params.outdir, pattern: "*.newick", mode: 'copy'
-    publishDir params.outdir, pattern: "beta_rarefaction/*", mode: 'copy'
-
     input:
     file(table)
     file(metadata)
@@ -18,9 +10,12 @@ process beta_rarefaction {
     file("weighted_unifrac_tree.newick")
     path("beta_rarefaction/*")
 
+    publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza, qzv}", mode: "copy"
+    publishDir params.outdir, pattern: "*.newick", mode: 'copy'
+    publishDir params.outdir, pattern: "beta_rarefaction/*", mode: 'copy'
+
     script:
     """
-
     nice -${params.niceness} qiime diversity beta-rarefaction \
         --i-table ${table} \
         --i-phylogeny ${tree} \

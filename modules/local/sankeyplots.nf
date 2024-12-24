@@ -1,9 +1,4 @@
 process sankeyplots  {
-    // merge alpha diversity metrics
-    container "$projectDir/containers/singularity/pyrrr.sif"
-
-    publishDir "${params.outdir}/sankeyplots", mode: 'copy'
-
     input:
     file(mapping)
     file(biotaviz)
@@ -11,6 +6,8 @@ process sankeyplots  {
     output:
     path("*.html")
     path("*.png"), emit: sankey_image
+
+    publishDir "${params.outdir}/sankeyplots", mode: 'copy'
 
     script:
     """

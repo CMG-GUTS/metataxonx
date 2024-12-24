@@ -1,12 +1,4 @@
 process alpha_rarefaction {
-// alpha rarefaction
-    container "$projectDir/containers/singularity/qiime2.sif"
-    cpus = params.cpus
-
-    publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza, qzv}", mode: "copy"
-    publishDir params.outdir, pattern: "*.csv", mode: 'copy'
-    publishDir params.outdir, pattern: "alpha_rarefaction/*", mode: 'copy'
-
     output:
     path("alpha_rarefaction.qzv")
     path("alpha_rarefaction/*")
@@ -20,6 +12,10 @@ process alpha_rarefaction {
     output:
     file("alpha_rarefaction.qzv")
     file("alpha_rarefaction/*.csv")
+
+    publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza, qzv}", mode: "copy"
+    publishDir params.outdir, pattern: "*.csv", mode: 'copy'
+    publishDir params.outdir, pattern: "alpha_rarefaction/*", mode: 'copy'
 
     script:
     """

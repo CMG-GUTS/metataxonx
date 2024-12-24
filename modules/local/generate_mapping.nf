@@ -1,14 +1,11 @@
-process generate_mapping {
-    // generate mapping file, including the paths required for Qiime import
-    container "$projectDir/containers/singularity/pyrrr.sif"
-
-    publishDir params.outdir, mode: 'copy'
-    
+process generate_mapping {    
     input:
     file(reads)
 
     output:
     path("metadata.tsv"), emit: metadata_clean
+
+    publishDir params.outdir, mode: 'copy'
     
     script: 
     """

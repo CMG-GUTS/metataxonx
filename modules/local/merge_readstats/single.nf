@@ -1,7 +1,4 @@
 process merge_readstats_single  {
-    // insert cutadapt stats in dada2 stats
-    container "$projectDir/containers/singularity/pyrrr.sif"
-
     publishDir "${params.outdir}/", mode: 'copy'
 
     input:

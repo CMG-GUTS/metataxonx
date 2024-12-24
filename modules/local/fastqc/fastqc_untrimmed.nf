@@ -1,7 +1,4 @@
 process fastqc_untrimmed {
-// run fastqc
-    container "$projectDir/containers/singularity/fastqc.sif"
-
     input:
     file(fastqfile)
 

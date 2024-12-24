@@ -1,7 +1,4 @@
 process validate_mapping {
-// validate existing mapping file
-    container "$projectDir/containers/singularity/pyrrr.sif"
-
     input:
     file(metadata)
     file(filename)

@@ -1,10 +1,4 @@
 process assign_taxonomy {
-    // assign taxonomy using sklearn qiime2
-    container "$projectDir/containers/singularity/qiime2.sif"
-
-    publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza, qzv}", mode: "copy"
-    publishDir params.outdir, pattern: "*.tsv", mode: 'copy'
-
     input:
     file(classifier)
     file(sequences)
@@ -12,6 +6,9 @@ process assign_taxonomy {
     output:
     path("taxonomy.tsv"), emit: taxonomy_tsv
     path("taxonomy_sklearn.qza"), emit: taxonomy_qza
+
+    publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza, qzv}", mode: "copy"
+    publishDir params.outdir, pattern: "*.tsv", mode: 'copy'
 
     script:
     """

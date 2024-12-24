@@ -1,9 +1,4 @@
-process core_diversity {
-    // div diversity metrics (alpha + beta)
-    container "$projectDir/containers/singularity/qiime2.sif"
-
-    publishDir "${params.outdir}/distance_matrices/", pattern: "*.txt", mode: "copy"
-    
+process core_diversity {    
     input:
     file(metadata)
     file(tree)
@@ -13,7 +8,10 @@ process core_diversity {
     output:
     path("diversity_core/*vector.qza"), emit: alpha
     path("*.txt")
+    path("weighted_unifrac_distance_matrix.qza.txt"), emit: wunifrac_matrix
 
+    publishDir "${params.outdir}/distance_matrices/", pattern: "*.txt", mode: "copy"
+    
     script:
     """
     nice -${params.niceness} qiime diversity core-metrics-phylogenetic \

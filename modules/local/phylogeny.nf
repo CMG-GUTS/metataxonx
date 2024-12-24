@@ -1,16 +1,13 @@
 process phylogeny {
-    // align ASVs
-    container "$projectDir/containers/singularity/qiime2.sif"
-
-    publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza, qzv}", mode: "copy"
-    publishDir params.outdir, pattern: "*.newick", mode: 'copy'
-
     input:
     file(sequences)
 
     output:
     path("rooted_tree.newick"), emit: rooted_tree_newick
     path("rooted-tree.qza"), emit: rooted_tree_qza
+
+    publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{qza, qzv}", mode: "copy"
+    publishDir params.outdir, pattern: "*.newick", mode: 'copy'
 
     script:
     """

@@ -1,7 +1,4 @@
 process minmax {
-    // get the minimum and maximum readcounts
-    container "$projectDir/containers/singularity/pyrrr.sif"
-
     input:
     file(featuretable)
 

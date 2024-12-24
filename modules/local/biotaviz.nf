@@ -1,9 +1,4 @@
 process biom_to_biotaviz {
-// generate biotaviz from biom-with-taxonomy
-    container "$projectDir/containers/singularity/pyrrr.sif"
-
-    publishDir params.outdir, mode: 'copy'
-
     input:
     file(biomfile)
 
@@ -11,6 +6,8 @@ process biom_to_biotaviz {
     path("biotaviz_clean_absolute.txt")
     path("biotaviz_clean_relative.txt"), emit: biotaviz
     path("asv_table_with_taxonomy.txt")
+
+    publishDir params.outdir, mode: 'copy'
 
     script:
     """

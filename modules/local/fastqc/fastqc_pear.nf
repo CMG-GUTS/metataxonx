@@ -1,7 +1,4 @@
 process fastqc_pear {
-// run fastqc
-    container "$projectDir/containers/singularity/fastqc.sif"
-
     input:
     file(fastqfile)
 

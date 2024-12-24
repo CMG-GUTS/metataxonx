@@ -1,9 +1,4 @@
 process qiime_import_export {
-    // import sequences from fastq and metadata file
-    container "$projectDir/containers/singularity/qiime2.sif"
-
-    publishDir "${params.outdir}/qiime_artefacts/", mode: "copy"
-
     input:
     file(seq_table)
     file(rep_seqs_fasta)
@@ -13,6 +8,8 @@ process qiime_import_export {
     path("table.qza"), emit: asv_qza
     path('asv_table_no_taxonomy.biom'), emit: biom_no_taxonomy
     path('rep-seqs.qza'), emit: repseqs_qza
+
+    publishDir "${params.outdir}/qiime_artefacts/", mode: "copy"
 
     script:
     """

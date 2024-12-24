@@ -1,9 +1,4 @@
 process dada2_denoise {
-    // denoise with dada2
-    container "$projectDir/containers/singularity/parallel_dada2.sif"
-
-    publishDir "${params.outdir}/qiime_artefacts/", pattern: "*.{rds}", mode: "copy"
-
     input:
     file(mapping)
 
@@ -12,8 +7,13 @@ process dada2_denoise {
     path("denoising-stats.tsv"), emit: denoising_stats
     path("rep-seqs.fna"), emit: rep_seqs_fasta
     path("dada_report.txt")
+    path("*.png")
+    path("errProfile_1.png"), emit: dada2_errors
+
+    publishDir "${params.outdir}/qiime_artefacts/", mode: "copy"
 
     script:
+    def novaseq = params.novaseq == true ? "--novaseq" : ""
     """
     Rscript $projectDir/bin/R/run-dada2-batch/parallel_dada2.R \
         --metadata ${mapping} \
@@ -23,6 +23,7 @@ process dada2_denoise {
         --p-max-ee 6 \
         --p-min-fold-parent-over-abundance 2 \
         --p-chimera-method consensus \
+        ${novaseq} \
         > dada_report.txt
     """
 }
