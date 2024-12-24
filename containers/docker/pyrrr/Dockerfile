@@ -3,7 +3,6 @@
 #   Created by Alem Gusinac, last modified at 30-09-2024
 # 
 #   This Dockerfile creates a container suitable for both Python:3.11 and r-base:latest
-#   It builds on top of a Qiime2 image base
 # 
 #   Current available setups by section:
 #       1. Linux package installation
@@ -11,6 +10,7 @@
 #       3. r-base:latest (current version: 4.4.0)
 #       4. PhantomJS (dependent on r-base)
 #       5. PEAR
+#       6. Seqkit
 # 
 #   Additional setups can be included after the latest section
 #   It is important to include lib/pkgs for your setup in the first section
@@ -33,6 +33,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     autoconf automake \
     make \
+    pandoc \
     cargo \
     curl wget pgp \ 
     libtool \
@@ -56,6 +57,7 @@ RUN apt-get update && apt-get install -y \
     liblzma-dev \
     fastqc \
     parallel \
+    default-jre \
     && rm -rf /var/lib/apt/lists/*
 
 #------------------------------------------------------------------------------------#
@@ -102,42 +104,10 @@ RUN R -e "install.packages('docopt',dependencies=TRUE)"
 
 # R dependencies from CRAN
 RUN Rscript install2.r --error --skipinstalled \
-    ggplot2 \
-    dplyr \
-    tidyr \
-    readr \
-    purrr \
-    readxl \
     tibble \
-    stringr \
-    forcats \
-    ggtext \
-    ggraph \
-    ape \
-    patchwork \
     networkD3 \
     webshot \
-    optparse \
-    ggiraph \
-    igraph \
-    BiocManager \
-    remotes \
-    downloadthis \
-    vegan \
-    kableExtra \
-    shiny \
-    data.table \
-    foreach \
-    parallel \
-    doParallel \
-    rbiom \
-    DT \
-    && rm -rf /tmp/downloaded_packages
-
-# R dependencies from BiocManager
-RUN Rscript installBioc.r --error --skipinstalled \
-    Biostrings \
-    ComplexHeatmap \
+    htmlwidgets \
     && rm -rf /tmp/downloaded_packages
 
 #------------------------------------------------------------------------------------#
@@ -164,6 +134,14 @@ COPY pear-0.9.11-linux-x86_64.tar.gz .
 RUN tar -xzf pear-0.9.11-linux-x86_64.tar.gz \
     && mv pear-0.9.11-linux-x86_64/bin/pear /usr/local/bin \
     && rm pear-0.9.11-linux-x86_64.tar.gz
+
+#------------------------------------------------------------------------------------#
+# 6. Setup Seqkit
+#------------------------------------------------------------------------------------#
+COPY seqkit_linux_386.tar.gz .
+RUN tar -xzf seqkit_linux_386.tar.gz \
+    && mv seqkit /usr/local/bin \
+    && rm seqkit_linux_386.tar.gz
 
 #------------------------------------------------------------------------------------#
 # Final steps

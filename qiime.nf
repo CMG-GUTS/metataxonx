@@ -7,6 +7,8 @@ log.info "metadata file          : ${params.metadata}"
 log.info "taxonomy classifier    : ${params.classifier}"
 log.info "root taxon             : ${params.root_taxon}"
 log.info "batch_size             : ${params.batch_size}"
+log.info "novaseq                : ${params.novaseq}"
+log.info "sub sampling size      : ${params.read_sample_size}"
 log.info "nanopore               : ${params.nanopore}"
 log.info "niceness               : ${params.niceness}"
 log.info "Sequence reading       : ${params.read_end}"
@@ -17,7 +19,6 @@ log.info "reverse adapter        : ${params.rev_adapter}"
 log.info "====================================="
 log.info "\n"
 
-
 /*
 =========================================================================
 IMPORT API utils
@@ -26,7 +27,6 @@ IMPORT API utils
 
 import java.nio.file.Files
 import java.nio.file.Paths
-
 
 /*
 =========================================================================
@@ -79,7 +79,7 @@ RUN MAIN WORKFLOW
 =========================================================================
 */
 
-workflow {
+workflow {    
     try {
         // Implements automatic directory file fetching
         def path = Paths.get(params.reads).toAbsolutePath().toString()
@@ -163,5 +163,5 @@ workflow {
 
     // post-qiime visualization and statistics
     sankeyplots(mapping_ch.metadata_clean, biom_to_biotaviz.out.biotaviz)
-    omics_analysis(mapping_ch.metadata_clean, combine_taxonomy_biom.out.biom_taxonomy, phylogeny.out.rooted_tree_newick, dada2_denoise.out.rep_seqs_fasta, reads_stats_file, sankeyplots.out.sankey_image, alpha_rarefaction.out.shannon_file)
+    omics_analysis(mapping_ch.metadata_clean, combine_taxonomy_biom.out.biom_taxonomy, phylogeny.out.rooted_tree_newick, core_diversity.out.wunifrac_matrix, alpha_rarefaction.out.shannon_file, reads_stats_file, sankeyplots.out.sankey_image, dada2_denoise.out.dada2_errors)
 }
