@@ -34,3 +34,41 @@ cd $HOME
 nextflow run metataxonomics-DSL2/qiime.nf -c metataxonomics-DSL2/nextflow.config -work-dir /your/work/dir --cpus 5 -profile singularity
 
 ```
+
+## Setting up docker
+For now docker images must be pulled as follows:
+```bash
+docker pull agusinac/pyrrr:0.2.0
+docker pull agusinac/run-dada2-batch:0.0.1
+docker pull agusinac/autoflow:0.0.1
+docker pull quay.io/qiime2/core:2020.8
+```
+
+## Setting up singularity
+For now singularity images are still depended on the docker pull commands. Execute the following commands after navigating to the ``metataxonomics-DSL2`` folder.
+```bash
+cd containers/singularity
+# pyrrr
+docker pull agusinac/pyrrr:0.2.0
+docker save agusinac/pyrrr:0.2.0 -o pyrrr_v2.tar
+singularity build pyrrr_v2.sif docker-archive://pyrrr_v2.tar
+rm pyrrr_v2.tar
+
+# dada2 batch
+docker pull agusinac/run-dada2-batch:0.0.1
+docker save docker agusinac/run-dada2-batch:0.0.1 -o parallel_dada2.tar
+singularity build parallel_dada2.sif docker-archive://parallel_dada2.tar
+rm parallel_dada2.tar
+
+# omicflow
+docker pull agusinac/autoflow:0.0.1
+docker save docker agusinac/autoflow:0.0.1 -o omicflow.tar
+singularity build omicflow.sif docker-archive://omicflow.tar
+rm omicflow.tar
+
+# qiime2
+docker pull quay.io/qiime2/core:2020.8
+docker save docker quay.io/qiime2/core:2020.8 -o qiime2.tar
+singularity build qiime2.sif docker-archive://qiime2.tar
+rm qiime2.tar
+```
