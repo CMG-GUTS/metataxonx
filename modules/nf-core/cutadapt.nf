@@ -1,0 +1,60 @@
+process CUTADAPT {
+    tag "$meta.id"
+    label 'process_medium'
+
+    input:
+    tuple val(meta), path(reads)
+
+    output:
+    tuple val(meta), path('*.trim.fastq.gz'), emit: reads
+    tuple val(meta), path('*.log')          , emit: log
+    path "versions.yml"                     , emit: versions
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def args = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    // adapter options
+    if (params.standard_primers) {
+        def adapters = meta.single_end ? "-a ${params.custom_adapter_1}" : "-a ${params.custom_adapter_1} -A ${params.custom_adapter_2}"
+    } else {
+        def adapters = meta.single_end ? "-a file:${params.standard_adapters}" : "-a file:${params.standard_adapters} -A file:${params.standard_adapters}"
+    }
+    // primer options
+    if (params.standard_primers) {
+        def primers = meta.single_end ? "-g ${params.custom_primer_1}" : "-g ${params.custom_primer_1} -G ${params.custom_primer_2}"
+    } else {
+        def primers = meta.single_end ? "-g file:${params.standard_primers}" : "-g file:${params.standard_primers} -G file:${params.standard_primers}"
+    }
+    // output files
+    def trimmed = meta.single_end ? "-o ${prefix}.trim.fastq.gz" : "-o ${prefix}_1.trim.fastq.gz -p ${prefix}_2.trim.fastq.gz"
+    """
+    cutadapt \\
+        -j $task.cpus \\
+        $args \\
+        $adapters \\
+        $primers \\
+        $trimmed \\
+        $reads \\
+        > ${prefix}.cutadapt.log
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        cutadapt: \$(cutadapt --version)
+    END_VERSIONS
+    """
+
+    stub:
+    def prefix  = task.ext.prefix ?: "${meta.id}"
+    def trimmed = meta.single_end ? "${prefix}.trim.fastq.gz" : "${prefix}_1.trim.fastq.gz ${prefix}_2.trim.fastq.gz"
+    """
+    touch ${prefix}.cutadapt.log
+    touch ${trimmed}
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        cutadapt: \$(cutadapt --version)
+    END_VERSIONS
+    """
+}
