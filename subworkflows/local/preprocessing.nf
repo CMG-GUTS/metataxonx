@@ -20,7 +20,6 @@ include { MERGE_MULTIQC_STATS } from '../../modules/local/merge_multiqc_stats.nf
 workflow PREPROCESSING {
     take:
     reads
-    classifier
 
     main:
     ch_multiqc_files = Channel.empty()

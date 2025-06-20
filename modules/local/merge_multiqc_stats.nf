@@ -7,8 +7,8 @@ process MERGE_MULTIQC_STATS {
     path(decon_stats)
 
     output:
-    path "merged_multiqc_stats.tsv", emit: read_stats
-    path "versions.yml"         , emit: versions
+    path "merged_multiqc_stats.tsv"     , emit: read_stats
+    path "versions.yml"                 , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -33,6 +33,7 @@ process MERGE_MULTIQC_STATS {
 
     stub:
     """
+    touch merged_multiqc_stats.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

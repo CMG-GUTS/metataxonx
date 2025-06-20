@@ -39,6 +39,8 @@ process CUTADAPT {
         $trimmed \\
         $reads \\
         > ${prefix}.cutadapt.log
+
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         cutadapt: \$(cutadapt --version)
