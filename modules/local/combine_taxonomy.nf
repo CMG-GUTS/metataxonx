@@ -1,19 +1,36 @@
-process combine_taxonomy_biom {
+process COMBINE_TAXONOMY {
+    tag "BATCH"
+    label 'process_single'
+
     input:
-    path(biomfile)
-    path(taxonomyfile)
+    path(biom)
+    path(taxonomy)
 
     output:
-    path("biom_with_taxonomy.biom"), emit: biom_taxonomy
-
-    publishDir params.outdir, mode: 'copy'
+    path "biom_with_taxonomy.biom"          , emit: biom_taxonomy
+    path "versions.yml"                     , emit: versions
 
     script:
     """
-    biom add-metadata \
-        -i ${biomfile} \
-        -o biom_with_taxonomy.biom \
-        --observation-metadata-fp ${taxonomyfile} \
+    biom add-metadata \\
+        -i $biom \\
+        -o biom_with_taxonomy.biom \\
+        --observation-metadata-fp $taxonomy \\
         --sc-separated taxonomy
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        biom: \$(biom --version)
+    END_VERSIONS
+    """
+
+    stub:
+    """
+    touch biom_with_taxonomy.biom
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        biom: \$(biom --version)
+    END_VERSIONS
     """
 }
