@@ -47,5 +47,6 @@ workflow CHECK_INPUT {
 
 
     emit:
+    meta       = meta_ch 
     classifier = classifier_ch
 }

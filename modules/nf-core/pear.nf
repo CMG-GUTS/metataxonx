@@ -17,6 +17,7 @@ process PEAR {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+    meta.single_end = true
     """
     gunzip -f ${reads[0]}
     gunzip -f ${reads[1]}
