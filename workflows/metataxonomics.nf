@@ -21,6 +21,8 @@ workflow METAPIPE {
     
     CHECK_INPUT ()
 
+    CHECK_INPUT.out.meta.view()
+
     PREPROCESSING(
         CHECK_INPUT.out.meta
     )
@@ -82,9 +84,28 @@ workflow METAPIPE {
         save_output(DIVERSITY_ANALYSIS.out.beta_rarefaction_qiime, "qiime_artifact/beta_div")
     }
 
-    REPORT(
+    // REPORT(
+    //     TAXONOMY.out.biom_with_taxonomy,
+    //     CHECK_INPUT.out.meta,
+    //     DIVERSITY_ANALYSIS.out.rooted_tree_newick,
+    //     DIVERSITY_ANALYSIS.out.wunifrac_matrix,
+    //     DIVERSITY_ANALYSIS.out.alpha_div_shannon,
+    //     Channel.empty(),
+    //     DENOISE.out.dada2_errors
+    // )
 
-    )
+    // if (params.save_biotaviz_files) {
+    //     save_output(REPORT.out.biotaviz_clean, "biotiaviz")
+    //     save_output(REPORT.out.biotaviz_relAbun, "biotiaviz")
+    //     save_output(REPORT.out.asv_table_with_taxonomy, "biotiaviz")
+    // }
+
+    // if (params.save_sankey_plot) {
+    //     save_output(REPORT.out.sankey_html, "sankey")
+    //     save_output(REPORT.out.sankey_png, "sankey")
+    // }
+
+    // if (params.save_final_report) save_output(REPORT.out.report, "omicflow")
 }
 
 def save_output(input_ch, sub_dir_name) {

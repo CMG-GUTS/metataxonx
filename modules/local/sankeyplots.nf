@@ -6,7 +6,7 @@ process SANKEYPLOT  {
     path(biotaviz)
 
     output:
-    path "*.html"           , emit: sankey_thml
+    path "*.html"           , emit: sankey_html
     path "*.png"            , emit: sankey_image
     path "versions.yml"     , emit: versions
 
