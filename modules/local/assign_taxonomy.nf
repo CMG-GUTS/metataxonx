@@ -1,5 +1,4 @@
 process ASSIGN_TAXONOMY {
-     tag "BATCH"
      label 'process_high'
 
      input:

@@ -1,5 +1,4 @@
 process COMBINE_TAXONOMY {
-    tag "BATCH"
     label 'process_single'
 
     input:
