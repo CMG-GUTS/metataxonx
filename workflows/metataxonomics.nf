@@ -17,7 +17,7 @@ include { REPORT } from '../subworkflows/local/report.nf'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-workflow METAPIPE {
+workflow METATAXONOMICS {
     
     CHECK_INPUT ()
 

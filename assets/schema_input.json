@@ -27,6 +27,12 @@
                 "errorMessage": "reverse_read needs to be a file path with no spaces.\n\nFile needs to exist!"
             }
         },
+        "patternProperties": {
+        "^RANKSTAT_.*": {
+            "type": ["string", "number"]
+            }
+        },
+        "additionalProperties": false,
         "required": ["sample", "forward_read"]
     },
     "uniqueEntries": ["sample"],

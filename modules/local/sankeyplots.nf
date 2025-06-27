@@ -1,4 +1,4 @@
-process SANKEYPLOT  {
+process SANKEYPLOTS {
     label 'process_single'
 
     input:

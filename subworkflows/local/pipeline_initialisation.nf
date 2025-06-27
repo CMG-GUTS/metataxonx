@@ -165,24 +165,6 @@ def validateParameters() {
     if ( !params.outdir ) {
         error("Missing output directory declaration: --outdir` is required.")
     }
-
-    // Checking reference directories existence
-    def bowtie_tmp = file(params.bowtie_db)
-    if (!bowtie_tmp.isDirectory()) {
-        error("Cannot find directory: ${params.bowtie_db}\n")
-    }
-    def metaphlan_tmp = file(params.metaphlan_db)
-        if (!metaphlan_tmp.isDirectory()) {
-        error("Cannot find directory: ${params.metaphlan_db}\n")
-    }
-    def humann_tmp = file(params.humann_db)
-    if (!humann_tmp.isDirectory()) {
-        error("Cannot find directory: ${params.humann_db}\n")
-    }
-    def catpack_tmp = file(params.cat_pack_db)
-    if (!catpack_tmp.isDirectory()) {
-        error("Cannot find directory: ${params.cat_pack_db}\n")
-    }
 }
 
 

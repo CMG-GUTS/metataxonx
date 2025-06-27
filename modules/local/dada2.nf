@@ -1,9 +1,8 @@
 process DADA2 {
-    tag "$meta.id"
     label 'process_high'
 
     input:
-    tuple val(meta), path(mapping)
+    path(mapping)
 
     output:
     path("seq-tab.tsv")             , emit: seq_table
@@ -16,15 +15,11 @@ process DADA2 {
     def args = task.ext.args ?: ''
     def novaseq = params.novaseq == true ? "--novaseq" : ""
     """
-    Rscript $projectDir/bin/R/run-dada2-batch/parallel_dada2.R \
-        --metadata ${mapping} \
-        --batch_n ${params.batch_size} \
-        --cpus ${task.cpus} \
-        --p-trunc-q 2 \
-        --p-max-ee 6 \
-        --p-min-fold-parent-over-abundance 2 \
-        --p-chimera-method consensus \
-        ${novaseq} \
+    Rscript $projectDir/bin/R/run-dada2-batch/parallel_dada2.R \\
+        --metadata ${mapping} \\
+        --batch_n ${params.batch_size} \\
+        --cpus ${task.cpus} \\
+        ${novaseq} \\
         > dada_report.txt
     
     cat <<-END_VERSIONS > versions.yml

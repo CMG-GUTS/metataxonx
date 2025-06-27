@@ -11,6 +11,7 @@ process CORE_DIVERSITY {
     path "diversity_core/*vector.qza"               , emit: alpha
     path "distance_matrices/*"                      , emit: beta_div_metrics
     path "weighted_unifrac_distance_matrix.qza.txt" , emit: wunifrac_matrix
+    path "versions.yml"                             , emit: versions
     
     script:
     """

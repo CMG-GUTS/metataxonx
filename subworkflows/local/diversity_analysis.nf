@@ -13,9 +13,9 @@ include { BETA_RAREFACTION } from '../../modules/local/beta_rarefaction.nf'
 
 workflow DIVERSITY_ANALYSIS {
     take:
-    metadata,
-    qiime_sequences,
-    biom_without_taxonomy,
+    metadata
+    qiime_sequences
+    biom_without_taxonomy
     qiime_asv_table
 
     main:
@@ -36,7 +36,7 @@ workflow DIVERSITY_ANALYSIS {
 
     CORE_DIVERSITY(
         metadata,
-        FASTTREE.out.rooted_tree_nerooted_tree_qzawick,
+        FASTTREE.out.rooted_tree_qza,
         qiime_asv_table,
         MINMAX.out.mincount
     )

@@ -29,7 +29,6 @@ process FASTTREE {
     "${task.process}":
         qiime: \$(qiime --version)
     END_VERSIONS
-
     """
 
     stub:

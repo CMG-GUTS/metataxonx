@@ -20,7 +20,7 @@ workflow CHECK_INPUT {
             def meta = [:]
             meta.id = sample.id
             meta.single_end = params.singleEnd
-        return tuple(meta, files)
+            return tuple(meta, files)
         }
 
     log.info "meta channel from samplesheet"

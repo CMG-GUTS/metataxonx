@@ -53,29 +53,23 @@ workflow PREPROCESSING {
         ch_multiqc_stats_trim = Channel.empty()
     }
 
-    if (!params.bypass_pear & !params.singleEnd) {
-        PEAR(
-            ch_trimmed_reads
-        ).assembled.set { ch_merged_reads }
-        ch_versions = ch_versions.mix(PEAR.out.versions)
+    PEAR(
+        ch_trimmed_reads
+    ).assembled.set { ch_merged_reads }
+    ch_versions = ch_versions.mix(PEAR.out.versions)
 
-        FASTQC_pear(ch_merged_reads)
-        MULTIQC_pear(
-            FASTQC_pear.out.zip.collect{ it[1] },
-            "decon",
-            [], [], [], [], []
-        )
-        ch_multiqc_stats_merged = MULTIQC_pear.out.multiqc_stats
-        ch_multiqc_files = ch_multiqc_files.mix(MULTIQC_pear.out.report)
-    } else {
-        ch_merged_reads = ch_trimmed_reads
-        ch_multiqc_stats_decon = Channel.empty()
-    }
+    FASTQC_pear(ch_merged_reads)
+    MULTIQC_pear(
+        FASTQC_pear.out.zip.collect{ it[1] },
+        "decon",
+        [], [], [], [], []
+    )
+    ch_multiqc_files = ch_multiqc_files.mix(MULTIQC_pear.out.report)
 
     MERGE_MULTIQC_STATS(
         MULTIQC_reads.out.multiqc_stats,
         ch_multiqc_stats_trim,
-        ch_multiqc_stats_merged
+        MULTIQC_pear.out.multiqc_stats
     )
 
     SEQKIT_SAMPLE(

@@ -1,26 +1,21 @@
 process CREATE_MAPPING {
-    tag "$meta.id"
     label 'process_single'
 
     input:
-    tuple val(meta), path(reads)
+    val(mapping_rows) // A list of lists!
 
     output:
-    tuple val(meta), path("mapping.csv"),   emit: dada2_mapping_file
+    path("mapping.csv")             , emit: mapping
 
     script:
-    def args = task.ext.args ?: ''
-    meta.id = 'batch'
+    def rows_str = mapping_rows.collect { row -> "${row[0]},${row[1]}" }.join('\n')
     """
-    echo "sample-id,absolute-filepath" > mapping.csv
-    echo "batch,\"$(realpath "${reads[0]}")\"" >> mapping.csv
+    echo "sample_id,absolute-filepath" > mapping.csv
+    echo "${rows_str}" >> mapping.csv
     """
 
     stub:
-    def args = task.ext.args ?: ''
-    meta.id = 'batch'
     """
     touch mapping.csv
     """
 }
-
