@@ -5,17 +5,17 @@ process CREATE_MAPPING {
     val(mapping_rows) // A list of lists!
 
     output:
-    path("mapping.csv")             , emit: mapping
+    path("mapping.tsv")             , emit: mapping
 
     script:
-    def rows_str = mapping_rows.collect { row -> "${row[0]},${row[1]}" }.join('\n')
+    def rows_str = mapping_rows.collect { row -> "${row[0]}\t${row[1]}" }.join('\n')
     """
-    echo "sample_id,absolute-filepath" > mapping.csv
-    echo "${rows_str}" >> mapping.csv
+    echo "sample-id\tabsolute-filepath" > mapping.tsv
+    echo "${rows_str}" >> mapping.tsv
     """
 
     stub:
     """
-    touch mapping.csv
+    touch mapping.tsv
     """
 }

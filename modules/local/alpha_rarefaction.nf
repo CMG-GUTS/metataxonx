@@ -8,7 +8,7 @@ process ALPHA_RAREFACTION {
 
     output:
     path "alpha_rarefaction.qzv"            , emit: qiime_alpha_file
-    path "alpha_rarefaction/*"              , emit: alpha_div_metrics
+    path "alpha_rarefaction/*.csv"          , emit: alpha_div_metrics
     path "alpha_rarefaction/shannon.csv"    , emit: shannon_file
     path "versions.yml"                     , emit: versions
 

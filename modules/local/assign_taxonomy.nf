@@ -13,8 +13,8 @@ process ASSIGN_TAXONOMY {
      script:
      """
      qiime feature-classifier classify-sklearn \\
-          --i-classifier $classifier \\
-          --i-reads $sequences \\
+          --i-classifier ${classifier} \\
+          --i-reads ${sequences} \\
           --o-classification taxonomy_sklearn.qza \\
           --p-n-jobs ${task.cpus}
 

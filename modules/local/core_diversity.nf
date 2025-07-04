@@ -9,7 +9,7 @@ process CORE_DIVERSITY {
 
     output:
     path "diversity_core/*vector.qza"               , emit: alpha
-    path "distance_matrices/*"                      , emit: beta_div_metrics
+    path "*distance*.txt"                           , emit: beta_div_metrics
     path "weighted_unifrac_distance_matrix.qza.txt" , emit: wunifrac_matrix
     path "versions.yml"                             , emit: versions
     
@@ -42,8 +42,6 @@ process CORE_DIVERSITY {
     """
     mkdir diversity_core
     touch diversity_core/alpha_vector.qza
-    mkdir distance_matrices
-    touch distance_matrices/bray.tsv
     touch weighted_unifrac_distance_matrix.qza.txt
 
     cat <<-END_VERSIONS > versions.yml

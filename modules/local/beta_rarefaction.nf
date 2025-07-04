@@ -10,7 +10,6 @@ process BETA_RAREFACTION {
     output:
     path "beta_rarefaction.qzv"                 , emit: beta_rarefaction_qiime
     path "weighted_unifrac_tree.newick"         , emit: weighted_unifrac_tree
-    path "beta_rarefaction/*"                   , emit: beta_rarefaction_files
     path "versions.yml"                         , emit: versions
 
     script:
@@ -24,8 +23,8 @@ process BETA_RAREFACTION {
         --p-sampling-depth "\$(<${mincount})"  \\
         --o-visualization beta_rarefaction.qzv
 
-    qiime tools export \
-        --input-path beta_rarefaction.qzv \
+    qiime tools export \\
+        --input-path beta_rarefaction.qzv \\
 		--output-path beta_rarefaction
 
     cp beta_rarefaction/sample-clustering-upgma.tre ./weighted_unifrac_tree.newick

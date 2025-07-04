@@ -61,12 +61,12 @@ workflow METATAXONOMICS {
         TAXONOMY.out.qiime_asv_table
     )
     if (params.save_alpha_div_files) {
-        save_output(DIVERSITY_ANALYSIS.out.alpha_div_metrics, "alpha_diversity/metrics")
-        save_output(DIVERSITY_ANALYSIS.out.merged_alpha_div, "alpha_diversity/metrics")
+        // save_output(DIVERSITY_ANALYSIS.out.alpha_div_metrics, "alpha_diversity/metrics")
+        // save_output(DIVERSITY_ANALYSIS.out.merged_alpha_div, "alpha_diversity/metrics")
     }
     if (params.save_beta_div_files) {
-        save_output(DIVERSITY_ANALYSIS.out.beta_div_metrics, "beta_diversity/metrics")
-        save_output(DIVERSITY_ANALYSIS.out.beta_rarefaction_files, "beta_diversity/metrics")
+        // save_output(DIVERSITY_ANALYSIS.out.beta_div_metrics, "beta_diversity/metrics")
+        // save_output(DIVERSITY_ANALYSIS.out.beta_rarefaction_files, "beta_diversity/metrics")
     }
     if (params.save_tree_files) {
         save_output(DIVERSITY_ANALYSIS.out.rooted_tree_newick, "diversity_analysis/tree")
