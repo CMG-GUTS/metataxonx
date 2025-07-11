@@ -57,31 +57,81 @@ workflow PIPELINE_INITIALISATION {
     Usage:
         nextflow run ${workflow.manifest.mainScript} \\
             -profile <docker/singularity> \\
-            -c nextflow.config \\
             -work-dir <workdir> \\
-            --reads <*_{1,R1,2,R2}.{fq,fq.gz,fastq,fastq.gz}> \\
-            --singleEnd \\
+            --input <samplesheet.csv> \\
             --outdir <outdir>
 
     Description:
-        ${workflow.manifest.description ?: "A Metagenomic pipeline for Microbiomics data"}
+        ${workflow.manifest.description ?: "A 16S metataxonomics pipeline"}
 
-    Mandatory Arguments:
-        --input         Path to samplesheet CSV file
-        --reads         Path to input fastq files
-        --outdir        Path to output directory
-        --singleEnd     Using flag sets singleEnd to true
+Data Input Options:
+        --input                     Path to samplesheet CSV file
+        --reads                     Path to input fastq files
+        --outdir                    Path to output directory
+        --singleEnd                 Using flag sets singleEnd to true
 
     Profiles:
-        -profile        Configuration profile to use. 
-                        Available: docker, singularity
+        -profile                    Configuration profile to use. 
+                                    Available: docker, singularity
+
+    Key Pipeline Options:
+        --classifier                Path to qiime2 classifier
+        --standard_adapters         Path to a collection of adapter sequences (default: $projectDir/assets/adapters.fasta)
+        --standard_primers          Path to a collection of primer sequences (default: $projectDir/assets/primers.fasta)
+        --custom_primer_1           Custom primer sequence forward (default: none)
+        --custom_primer_2           Custom primer sequence reverse (default: none)
+        --custom_adapter_1          Custom adapter sequence forward (default: none)
+        --custom_adapter_2          Custom adapter sequence reverse (default: none)
+
+     Sample read depth settings
+        --batch_size                Size of batches in case many samples are supplied (default: 500)
+        --read_sample_size          Minimum number of reads within a single sample (default: 100.000)
+        --novaseq                   DADA2 NovaSeq denoising (default: false)
+        --root_taxon                Biotaviz feature subset (default: 'domain - Bacteria')
+
+    Process Bypass Options:
+        --bypass_trim               Skip read trimming (default: false)
+
+    File Saving Options:
+        --save_trim_reads           Save trimmed reads (default: false)
+        --save_multiqc_reports      Save MultiQC reports (default: true)
+        --save_sampled_reads        Save interleaved reads (default: false)
+        --save_merged_reads         Save paired-end merged reads (default: false)
+
+        --save_denoise_stats        Save DADA2 denoising stats (default: false)
+        --save_denoise_sequences    Save representative sequences (default: false)
+        --save_denoise_table        Save abundance table (default: false)
+
+        --save_biom_files           Save BIOM format file (default: false)
+        --save_tree_files           Save NEWICK format tree from fasttree (default: false)
+        --save_alpha_div_files      Save alpha diversity metrics (default: false)
+        --save_beta_div_files       Save beta diversity metrics (default: false)
+        --save_qiime_artifacts      Save qiime2 artifacts (default: false)
+
+        --save_biotaviz_files       Save BiotaViz format (default: false)
+        --save_sankey_plot          Save sankey plot of taxa (default: false)
+        --save_final_report         Save report file (default: false)
+
+    Resources Options:
+        --process_low_cpu           Number of cores to allocate for process with low cpu requirement (default: 4)
+        --process_med_cpu           Number of cores to allocate for process with medium cpu requirement (default: 8)
+        --process_high_cpu          Number of cores to allocate for process with high cpu requirement (default: 16)
+        --cpus                      Maximum number of cores to allocate for the global pipeline scope (default: 32)
+
+    For advanced resource customization, see the configuration file:
+        ${projectDir}/conf/base.config
+    or supply your own config file with the -c option:
+        -c path/to/your.config
 
     Other Options:
         --help          Show this help message and exit
         --version       Show the pipeline version and exit
 
+    For additional customization, see the configuration file: 
+        ${projectDir}/nextflow.config
+
     Example Command:
-        nextflow run ${workflow.manifest.mainScript} -profile docker --reads *_{1,2}.fastq.gz --outdir results
+        nextflow run ${workflow.manifest.mainScript} -profile docker --reads '*_{1,2}.fastq.gz' --outdir results
         nextflow run ${workflow.manifest.mainScript} -profile singularity --input samplesheet.csv --outdir results
 
     For more information, visit: ${workflow.manifest.homePage}
@@ -100,7 +150,7 @@ workflow PIPELINE_INITIALISATION {
     //
     // Custom validation for pipeline parameters
     //
-    validateParameters()
+    // validateParameters()
 
     emit:
     versions    = ch_versions
@@ -157,15 +207,15 @@ workflow PIPELINE_COMPLETION {
 //
 // Check and validate pipeline parameters
 //
-def validateParameters() {
-    if ( !params.reads && !params.input) {
-        error("Missing reads and input declaration, one is required.")
-    }
+// def validateParameters() {
+//     if ( !params.reads && !params.input) {
+//         error("Missing reads and input declaration, one is required.")
+//     }
 
-    if ( !params.outdir ) {
-        error("Missing output directory declaration: --outdir` is required.")
-    }
-}
+//     if ( !params.outdir ) {
+//         error("Missing output directory declaration: --outdir` is required.")
+//     }
+// }
 
 
 //

@@ -1,5 +1,5 @@
-sample,forward_read,reverse_read,RANKSTAT_treatment
-S100,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S100_R1_.fastq.gz,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S100_R2_.fastq.gz,H
-S103,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S103_R1_.fastq.gz,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S103_R2_.fastq.gz,T
-S115,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S115_R1_.fastq.gz,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S115_R2_.fastq.gz,H
-S120,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S120_R1_.fastq.gz,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S120_R2_.fastq.gz,T
+sample_id,forward_read,reverse_read,RANKSTAT_treatment,CORRELATION_BMI
+S100,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S100_R1_.fastq.gz,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S100_R2_.fastq.gz,H,23
+S103,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S103_R1_.fastq.gz,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S103_R2_.fastq.gz,T,33
+S115,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S115_R1_.fastq.gz,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S115_R2_.fastq.gz,H,22
+S120,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S120_R1_.fastq.gz,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S120_R2_.fastq.gz,T,19
