@@ -3,12 +3,12 @@
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
 [![nf-test](https://img.shields.io/badge/tested_with-nf--test-337ab7.svg)](https://code.askimed.com/nf-test)
 
-## Introduction **metaBIOMx**
+## Introduction **metaTAXONx**
 
-The metagenomics microbiomics pipeline is a best-practice suite for the decontamination and annotation of sequencing data obtained via short-read shotgun sequencing. The pipeline contains [NF-core modules](https://github.com/nf-core/modules) and other local modules that are in the similar format. It can be runned via both docker and singularity containers.
+The 16S pipeline is a best-practice suite for the preprocessing, denoising and annotation of sequencing data obtained via 16S rRNA marker-gene sequencing. The pipeline contains [NF-core modules](https://github.com/nf-core/modules) and other local modules that are in the similar format. It can be runned via both docker and singularity containers.
 
 ## Pipeline summary
-The pipeline is able to perform different taxonomic annotation on either (single/paired) reads or contigs. The different subworkflows can be defined via `--bypass_<method>` flags, a full overview is shown by running `--help`. By default the pipeline will check if the right databases are present in the right formats, when the path is provided. If this is not the case, compatible databases will be automatically downloaded.
+The pipeline is able to perform different taxonomic annotation on either (single/paired) reads. The different subworkflows can be defined via `--bypass_<method>` flags, a full overview is shown by running `--help`.
 
 The pipeline performs preprocessing of the reads via the removal of primers or adapters via [cutadapt](https://cutadapt.readthedocs.io/en/stable/) and paired-end read merging via [PEAR](https://cme.h-its.org/exelixis/web/software/pear/doc.html).Before and after each step the quality control will be assessed via [fastqc](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) and a [multiqc](https://github.com/MultiQC/MultiQC) report is created as output. The denoising of single-end reads is performed via [DADA2](https://benjjneb.github.io/dada2/) in batches or in paralell with the module [run-dada2-batch](https://github.com/agusinac/run-dada2-batch).
 
