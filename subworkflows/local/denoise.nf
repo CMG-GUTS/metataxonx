@@ -4,7 +4,7 @@
 
 */
 include { DADA2 } from '../../modules/local/dada2.nf'
-include { CREATE_MAPPING } from '../../modules/local/create_mapping.nf'
+include { CREATE_QIIME_MAPPING } from '../../modules/local/create_qiime_mapping.nf'
 
 workflow DENOISE {
     take:
@@ -15,7 +15,7 @@ workflow DENOISE {
 
     // Create Qiime2 mapping file
     mapping_rows_ch = meta_ch.map { meta, reads -> [ meta.id, reads ] }
-    CREATE_MAPPING(
+    CREATE_QIIME_MAPPING(
         mapping_rows_ch.collect(flat:false)
     ).mapping.set{ mapping_ch }
 
