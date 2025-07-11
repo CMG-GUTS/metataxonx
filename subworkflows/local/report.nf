@@ -1,8 +1,9 @@
 /*
 
-    COMPUTATION OF BETA & ALPHA DIVERSITY
+    
 
 */
+include { CREATE_ANALYSIS_MAPPING } from '../../modules/local/create_analysis_mapping.nf'
 include { BIOTAVIZ } from '../../modules/local/biotaviz.nf'
 include { SANKEYPLOTS } from '../../modules/local/sankeyplots.nf'
 include { OMICFLOW } from '../../modules/local/omicsflow.nf'
@@ -11,7 +12,7 @@ include { OMICFLOW } from '../../modules/local/omicsflow.nf'
 workflow REPORT {
     take:
     biom
-    meta
+    metadata
     rooted_tree_newick
     weighted_unifrac_file
     shannon_file
@@ -21,25 +22,29 @@ workflow REPORT {
     main:
     ch_versions = Channel.empty() 
 
-    // Convert meta channel to proper metadata file
-    mapping_ch = meta
+    if (metadata) {
+        CREATE_ANALYSIS_MAPPING(
+            metadata
+        ).mapping.set{ metadata_ch }
+    }
 
     BIOTAVIZ(biom)
     ch_versions = ch_versions.mix(BIOTAVIZ.out.versions)        
 
     SANKEYPLOTS(
-        mapping_ch,
+        metadata_ch,
         BIOTAVIZ.out.biotaviz_relative
     )
     ch_versions = ch_versions.mix(SANKEYPLOTS.out.versions)
 
     OMICFLOW(
+        metadata_ch,
         biom,
-        mapping_ch,
         rooted_tree_newick,
         weighted_unifrac_file,
         shannon_file,
-        reads_stats_file,
+        Channel.empty(),
+        SANKEYPLOTS.out.sankey_image,
         dada2_errors
     )
     ch_versions = ch_versions.mix(OMICFLOW.out.versions)

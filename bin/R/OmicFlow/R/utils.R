@@ -35,3 +35,45 @@ read_rarefraction_qiime <- function(filename) {
 
   return(shannon_long)
 }
+
+read_sparseTable <- function(filename) {
+  # Read text file, supports csv, excel and tsv formats
+  dt <- data.table::fread(filename)
+  dt[, (names(dt)) := lapply(.SD, function(x) {
+    x <- gsub("\\s+", "", x)                      # Removes spaces between strings
+    x <- gsub("^[A-Za-z]*", "", x)                # Removes letters
+    })]
+
+  # Convert to matrix format
+  mat_1 <- as.matrix(dt,
+                     rownames = rownames(dt),
+                     colnames = colnames(dt))
+
+  # Change character values to numeric
+  mat_2 <- matrix(data = as.numeric(mat_1),
+                  ncol = ncol(dt))
+  colnames(mat_2) <- colnames(dt)
+
+  mat_2[is.na(mat_2) | mat_2 == ""] <- 0          # Empty strings from cleaning step
+
+  # Return sparseMatrix
+  return(as(mat_2, "sparseMatrix"))
+}
+
+find_pairs <- function(dt_A, dt_B, unique.ids) {
+  result <- data.table::rbindlist(lapply(unique.ids, function(id) {
+
+    A_matches <- colnames(dt_A)[stringr::str_detect(colnames(dt_A), id)]
+    B_matches <- colnames(dt_B)[stringr::str_detect(colnames(dt_B), id)]
+
+    if (length(A_matches) == 1 && length(B_matches) == 1) {
+      data.table::data.table(colnames_A = A_matches, colnames_B = B_matches, id = id)
+    } else {
+      NULL
+    }
+
+  }))
+  result[, id := NULL]
+
+  return(result)
+}

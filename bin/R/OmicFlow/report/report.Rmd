@@ -158,13 +158,6 @@ if (!is.null(plots$correlation_plots)) {
 
 ```
 
-```{r}
-if (!is.null(sankeyplot)) {
-  cat("## sankey plot \n")
-  knitr::include_graphics(sankeyplot)
-}
-```
-
 ## Downloadable content
 
 ```{r}

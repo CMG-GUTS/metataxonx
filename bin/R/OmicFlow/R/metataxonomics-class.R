@@ -8,7 +8,7 @@
 metataxonomics <- R6::R6Class(
   classname = "metataxonomics",
   cloneable = FALSE,
-  inherit = tools,
+  inherit = omics,
   public = list(
     #' @field countData A path to an existing file, data.table or data.frame.
     countData = NULL,
@@ -34,46 +34,48 @@ metataxonomics <- R6::R6Class(
     #'                            treeData = "rooted_tree.newick")
     #'
     #' @return A new `metataxonomics` object.
-    initialize = function(countData = NA, metaData = NA, featureData = NA, treeData = NA, biomData = NA) {
-      if (tools::file_ext(biomData) == "biom") {
+    initialize = function(countData = NA, metaData = NA, featureData = NA, treeData = NA, biomData = NA,
+                          feature_names = c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species")) {
+      if (!is.na(biomData) & tools::file_ext(biomData) == "biom") {
         # Loads biom data
-        self$biomData <- rhdf5::h5read(biomData, "/", read.attributes = TRUE)
+        self$biomData <- rbiom::read.biom(biomData)
 
         # Loads metadata & replaces empty values by NAs
-        self$metaData <- data.table::fread(metaData)
+        self$metaData <- data.table::fread(metaData, header=TRUE)
         self$metaData <- self$metaData[, lapply(.SD, function(x) ifelse(x == "", NA, x)),
                                        .SDcols = colnames(self$metaData)]
 
-        # initializes count matrix
-        indptr <- as.numeric(self$biomData$observation$matrix$indptr)
+        # Converts slam::triple_sparse_matrix to Matrix::sparseMatrix
+        self$countData <- Matrix::sparseMatrix(i = self$biomData$counts$i,
+                                               j = self$biomData$counts$j,
+                                               x = self$biomData$counts$v,
+                                               dimnames = self$biomData$counts$dimnames)
 
-        self$countData <- Matrix::sparseMatrix(
-          i        = unlist(sapply(1:(length(indptr)-1), function (i) rep(i, diff(indptr[c(i,i+1)])))),
-          j        = as.numeric(self$biomData$observation$matrix$indices) + 1,
-          x        = as.numeric(self$biomData$observation$matrix$data),
-          dims     = c(length(self$biomData$observation$ids), length(self$biomData$sample$ids)),
-          dimnames = list(
-            as.character(self$biomData$observation$ids),
-            as.character(self$biomData$sample$ids)
-          ))
-
-        # Set column order
+        # Match and order row names for countData and metaData
+        # Now assuming countData has the right order and mistake is made in metadata
+        self$countData <- self$countData[, colnames(self$countData) %in% self$metaData[["SAMPLE-ID"]], drop = FALSE]
+        self$metaData <- self$metaData[self$metaData[["SAMPLE-ID"]] %in% colnames(self$countData), ]
         self$countData <- self$countData[, self$metaData[["SAMPLE-ID"]], drop = FALSE]
 
         # initializes taxonomy table
-        if (!is.null(self$biomData$observation$metadata$taxonomy)) {
-          self$featureData <- data.table::data.table(t(self$biomData$observation$metadata$taxonomy))
-          self$featureData <- self$featureData[, ID := self$biomData$observation$ids]
+        if (!is.null(self$biomData$taxonomy)) {
+          self$featureData <- data.table::data.table(self$biomData$taxonomy)
+          colnames(self$featureData) <- sub(".otu", "ID", colnames(self$biomData$taxonomy))
         }
 
       } else {
-        super$initialize()
+        super$initialize(countData = countData,
+                         featureData = featureData,
+                         metaData = metaData)
       }
 
       if (!is.null(self$featureData)) {
-        colnames(self$featureData)[!grepl("ID", colnames(self$featureData))] <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species")
         self$featureData <- self$featureData[, lapply(.SD, function(x) gsub("^[dpcofgs]_{2}", "", x)),
                                              .SDcols = colnames(self$featureData)]
+        # Rename last column names by feature_names
+        n_feature_names <- length(feature_names)
+        n_cols_featureData <- ncol(self$featureData)
+        colnames(self$featureData)[n_cols_featureData:(n_cols_featureData - n_feature_names + 1)] <- base::rev(feature_names)
       }
 
       if (!is.na(treeData)) self$treeData <- ape::read.tree(treeData)

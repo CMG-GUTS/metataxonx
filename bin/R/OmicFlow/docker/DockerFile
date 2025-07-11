@@ -1,6 +1,6 @@
 #------------------------------------------------------------------------------------#
 #
-#   Created by Alem Gusinac, last modified at 16-12-2024
+#   Created by Alem Gusinac, last modified at 24-12-2024
 #
 #   This Dockerfile creates a container suitable for r-base:latest and Qiime2
 #   It builds on top of a slim ubuntu (70MB) base
@@ -39,7 +39,7 @@ RUN apt-get update && apt-get install -y \
     libx11-dev \
     libcurl4-openssl-dev \
     libssl-dev \
-    zlib1g-dev \ 
+    zlib1g-dev \
     libfreetype6-dev \
     libjpeg-dev \
     libpng-dev \

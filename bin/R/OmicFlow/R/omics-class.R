@@ -1,16 +1,16 @@
-#' Abstract 'tools' class
+#' Abstract 'omics' class
 #'
-#' @description This is the abstract class 'tools', contains a variety of methods that are inherited and applied in the omics classes:
+#' @description This is the abstract class 'omics', contains a variety of methods that are inherited and applied in the omics classes:
 #' \link[OmicFlow]{metataxonomics}, transcriptomics, metabolomics and proteomics.
 #'
 #' @details
 #' Every class is created with the \link[R6]{R6Class} method. Methods are either public or private, and only the public components are inherited by other omics classes.
-#' The tools class by default uses triplet \link[data.table]{data.table} data structures for quick and efficient data manipulation and returns the object by reference, same as the R6 class.
+#' The omics class by default uses triplet \link[data.table]{data.table} data structures for quick and efficient data manipulation and returns the object by reference, same as the R6 class.
 #' The method by reference is very efficient when dealing with big data.
 #' @export
 
-tools <- R6::R6Class(
-  classname = "tools",
+omics <- R6::R6Class(
+  classname = "omics",
   cloneable = FALSE,
   public = list(
     #' @field countData A path to an existing file, data.table or data.frame.
@@ -22,31 +22,73 @@ tools <- R6::R6Class(
 
     #' @description
     #' Wrapper function that is inherited and adapted for each omics class.
-    #' To create a new object use \code{tools$new()}
+    #' To create a new object use \code{omics$new()}
     #' @param countData countData A path to an existing file, data.table or data.frame.
     #' @param featureData A path to an existing file, data.table or data.frame.
     #' @param metaData A path to an existing file, data.table or data.frame.
-    #' @return A new `tools` object.
+    #' @return A new `omics` object.
     initialize = function(countData = NA, featureData = NA, metaData = NA) {
       # Loads counts
-      self$countData <- data.table::fread(countData)
+      if (!is.na(countData)) {
+        self$countData <- read_sparseTable(countData)
+
+      } else {
+        cli::cli_abort(c(
+          "countData cannot be empty, please provide a tab or comma separated file"
+        ))
+      }
 
       # Loads features
-      self$featureData <- data.table::fread(featureData)
-      self$featureData[, ID := rownames(self$featureData)]
+      if (!is.na(featureData)) {
+        self$featureData <- data.table::fread(featureData,
+                                              header = TRUE)
+        self$featureData[, ID := rownames(self$featureData)]
+        colnames(self$featureData) <- gsub("\\s+", "_", colnames(self$featureData))
+        rownames(self$countData) <- self$featureData$ID # Should be replaced by featureID
+
+      } else {
+        cli::cli_abort(c(
+          "featureData cannot be empty, please provide a tab or comma separated file"
+        ))
+      }
 
       # Loads metadata & replaces empty values by NAs
-      self$metaData <- data.table::fread(metaData)
-      self$metaData <- self$metaData[, lapply(.SD, function(x) ifelse(x == "", NA, x)),
-                                     .SDcols = colnames(self$metaData)]
+      if (!is.na(metaData)) {
+        self$metaData <- data.table::fread(metaData)
+        colnames(self$metaData) <- base::toupper(colnames(self$metaData))
+        self$metaData <- self$metaData[, lapply(.SD, function(x) ifelse(x == "", NA, x)),
+                                       .SDcols = colnames(self$metaData)]
+        colnames(self$metaData) <- gsub("\\s+", "_", colnames(self$metaData))
 
-      # Set column order
-      self$countData <- self$countData[, self$metaData[["SAMPLE-ID"]], drop = FALSE]
+        cli::cli_warn(c(
+          "i" = "colnames of metaData are automatically converted to uppercase letters."
+        ))
+
+      } else {
+        cli::cli_abort(c(
+          "metaData cannot be empty, please provide a tab or comma separated file"
+        ))
+      }
+
+      # There should be an interal metadata template check to make sure all headers are correct.
+      # Should also include to check for missing data and alert the user!
+      # Current example to be used in the future
+      base::tryCatch(
+        { self$countData <- self$countData[, self$metaData[["SAMPLE-ID"]], drop = FALSE] },
+        error = function(e) {
+          cli::cli_abort(c(
+            "Error occured during countData subsetting by metaData:",
+            "i" = "The error message was: {e$message}",
+            "x" = "Possible cause: 'SAMPLE-ID' doesn't exist."
+          ))
+        }
+      )
+
     },
     #' @description
     #' Removes empty (zero) values by row and column.
     #' @examples
-    #' obj <- tools$new(countData = "counts.csv",
+    #' obj <- omics$new(countData = "counts.csv",
     #'                  featureData = "features.txt",
     #'                  metaData = "metadata.tsv"
     #' obj$removeZeros()
@@ -67,7 +109,7 @@ tools <- R6::R6Class(
     #' @param sample.id The column containing sample-id that are also the countData columns.
     #' @param column The column from where NAs should be removed.
     #' @examples
-    #' obj <- tools$new(countData = "counts.csv",
+    #' obj <- omics$new(countData = "counts.csv",
     #'                  featureData = "features.txt",
     #'                  metaData = "metadata.tsv"
     #' obj$removeNAs(sample.id = "SAMPLE-ID", column = "treatment")
@@ -82,7 +124,7 @@ tools <- R6::R6Class(
     #' @param ... Expressions that return a logical value, and are defined in terms of the variables in featureData.
     #' Only rows for which all conditions evaluate to TRUE are kept.
     #' @examples
-    #' obj <- tools$new(countData = "counts.csv",
+    #' obj <- omics$new(countData = "counts.csv",
     #'                  featureData = "features.txt",
     #'                  metaData = "metadata.tsv"
     #' obj$feature_subset(rank1 == "Streptococcus")
@@ -99,7 +141,7 @@ tools <- R6::R6Class(
     #' @param ... Expressions that return a logical value, and are defined in terms of the variables in metaData.
     #' Only rows for which all conditions evaluate to TRUE are kept.
     #' @examples
-    #' obj <- tools$new(countData = "counts.csv",
+    #' obj <- omics$new(countData = "counts.csv",
     #'                  featureData = "features.txt",
     #'                  metaData = "metadata.tsv"
     #' obj$sample_subset(cycle == "t1")
@@ -110,7 +152,8 @@ tools <- R6::R6Class(
       # subset columns and rows
       rows_to_keep <- self$metaData[, ...]
       self$metaData <- self$metaData[rows_to_keep, ]
-      self$countData <- self$countData[, rows_to_keep]
+      # NAs can occur in rows_to_keep, which then doesnt work on sparse Matrix.
+      self$countData <- self$countData[, self$metaData[["SAMPLE-ID"]] ]
       self$removeZeros()
       invisible(self)
     },
@@ -119,7 +162,7 @@ tools <- R6::R6Class(
     #' @param feature_rank Column name to agglomerate.
     #' @param feature_filter Removes features by name, works on single strings or vector of strings.
     #' @examples
-    #' obj <- tools$new(countData = "counts.csv",
+    #' obj <- omics$new(countData = "counts.csv",
     #'                  featureData = "features.txt",
     #'                  metaData = "metadata.tsv"
     #' obj$feature_glom(feature_rank = "Rank1")
@@ -127,7 +170,8 @@ tools <- R6::R6Class(
     feature_glom = function(feature_rank, feature_filter = NA) {
       # creates a subset of unique feature rank, hashes combined for each unique rank
       counts <- data.table::data.table("ID" = rownames(self$countData))
-      features <- data.table::copy(self$featureData)
+      # Supports multiple features
+      features <- data.table::copy(self$featureData[self$featureData[[ feature_rank[1] ]] != "", ])
 
       # set keys
       data.table::setkey(counts, ID)
@@ -145,20 +189,25 @@ tools <- R6::R6Class(
       for (i in 1:nrow(grouped_ids)) {
         ids <- grouped_ids$IDs[[i]]
         if (length(ids) == 1) {
-          counts_glom[i, ] <- self$countData[grouped_ids$IDs[[i]],]
+          counts_glom[i, ] <- self$countData[ids, ]
         } else {
-          counts_glom[i, ] <- Matrix::colSums(self$countData[grouped_ids$IDs[[i]],])
+          counts_glom[i, ] <- Matrix::colSums(self$countData[ids, ])
         }
       }
 
       # Prepare final self-components
-      self$featureData <- base::unique(self$featureData, by = feature_rank)
+      self$featureData <- base::unique(features, by = feature_rank)
+      # Fetch first ID from each list
+      grouped_ids$ID_first <- sapply(grouped_ids$IDs, `[[`, 1)
+      # Reorder by matching IDs
+      self$featureData <- self$featureData[ base::order(base::match(self$featureData$ID, grouped_ids$ID_first)) ]
       self$countData <- counts_glom
 
       # Clean up featureData
-      empty_strings <- self$featureData[[feature_rank]] != ""
+      empty_strings <- !is.na(self$featureData[[ feature_rank[1] ]])
       self$featureData <- self$featureData[empty_strings, ]
       self$countData <- self$countData[empty_strings, ]
+      rownames(self$countData) <- self$featureData$ID
 
       # Remove user-specified feature(s) filter as array
       if (is(feature_filter, "character")) {
@@ -174,7 +223,7 @@ tools <- R6::R6Class(
     #' Performs transformation on countData as a Triplet sparse matrix \link[Matrix]{uniqTsparse}
     #' @param fun A function such as \code{log2}, \code{log}
     #' @examples
-    #' obj <- tools$new(countData = "counts.csv",
+    #' obj <- omics$new(countData = "counts.csv",
     #'                  featureData = "features.txt",
     #'                  metaData = "metadata.tsv"
     #' obj$transform(log2)
@@ -186,7 +235,7 @@ tools <- R6::R6Class(
     #' @description
     #' Relative abundance computation by column sums.
     #' @examples
-    #' obj <- tools$new(countData = "counts.csv",
+    #' obj <- omics$new(countData = "counts.csv",
     #'                  featureData = "features.txt",
     #'                  metaData = "metadata.tsv"
     #' obj$normalize()
@@ -203,15 +252,15 @@ tools <- R6::R6Class(
     #' @details
     #' Counts the number of features identified for each column, for example in case of 16S metagenomics it would be the number of OTUs or ASVs on different taxonomy levels.
     #' @examples
-    #' obj <- tools$new(countData = "counts.csv",
+    #' obj <- omics$new(countData = "counts.csv",
     #'                  featureData = "features.txt",
     #'                  metaData = "metadata.tsv"
     #' plt <- obj$rankstat()
     #' plt
     #' @return A \link[ggplot2]{ggplot} object.
-    rankstat = function() {
+    rankstat = function(feature_ranks = c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species")) {
       # Counts number of ASVs without empty values
-      values <- self$featureData[, lapply(.SD, function(x) sum(x != "")), .SDcols = !c("ID")]
+      values <- self$featureData[, lapply(.SD, function(x) sum(!is.na(x) & x != "")), .SDcols = !c("ID")][, .SD, .SDcols = feature_ranks]
 
       # Pivot into long table
       long_values <- data.table::melt(data = values,
@@ -220,7 +269,7 @@ tools <- R6::R6Class(
                                       value.name = "counts")
 
       # Sets order level of taxonomic ranks
-      long_values[, variable := factor(variable, levels = c("Species", "Genus", "Family", "Order", "Class", "Phylum", "Domain"))]
+      long_values[, variable := factor(variable, levels = base::rev(feature_ranks))]
 
 
       # Returns rankstat plot
@@ -245,8 +294,9 @@ tools <- R6::R6Class(
     #' @param method Diversity metric such as "shannon", "invsimpson" or "simpson"
     #' @param Brewer.palID Palette set to be applied, see \link[RColorBrewer]{brewer.pal} or \link[OmicFlow]{fetch_palette}.
     #' @param evenness A boolean wether to divide diversity by number of species, see \link[vegan]{specnumber}.
+    #' @param p.adjust.method A character variable to specify the p.adjust.method to be used, default is 'fdr'.
     #' @examples
-    #' obj <- tools$new(countData = "counts.csv",
+    #' obj <- omics$new(countData = "counts.csv",
     #'                  featureData = "features.txt",
     #'                  metaData = "metadata.tsv"
     #' plt <- obj$alpha_diversity(col_name = "treatment",
@@ -254,12 +304,13 @@ tools <- R6::R6Class(
     #'
     #' @return A \link[ggplot2]{ggplot} object.
     #' @seealso \link[OmicFlow]{diversity_plot}
-    alpha_diversity = function(col_name, method = c("shannon", "invsimpson", "simpson"), Brewer.palID="Set2", evenness = FALSE) {
+    alpha_diversity = function(col_name, method = c("shannon", "invsimpson", "simpson"),
+                               Brewer.palID="Set2", evenness = FALSE, paired = FALSE, p.adjust.method = "fdr") {
 
       # OUTPUT: Plot list
       plot_list <- list()
 
-      # Save tools class components
+      # Save omics class components
       private$tmp_link(
         .countData = self$countData,
         .featureData = self$featureData,
@@ -269,7 +320,7 @@ tools <- R6::R6Class(
 
       # Alpha diversity based on 'method'
       div <- data.table::data.table(diversity(x = self$countData, index=method))
-      div[, (paste(col_name)) := self$metaData[, .SD, .SDcols = c(col_name)]]
+      div[, (col_name) := self$metaData[, .SD, .SDcols = c(col_name)]]
       # Adjusts for evenness
       if (evenness) div$V1 <- div$V1 / log(vegan::specnumber(div$V1))
 
@@ -277,13 +328,16 @@ tools <- R6::R6Class(
       colors <- fetch_palette(self$metaData, col_name, Brewer.palID)
 
       # Create and saves plots
+      plot_list$data <- div
       plot_list$diversity <- diversity_plot(dt = na.omit(div),
                                             values = "V1",
                                             col_name = col_name,
                                             palette = colors,
-                                            method = method)
+                                            method = method,
+                                            paired = paired,
+                                            p.adjust.method = p.adjust.method)
 
-      # Restores tools class components
+      # Restores omics class components
       private$tmp_restore()
 
       return(plot_list)
@@ -297,7 +351,7 @@ tools <- R6::R6Class(
     #' @param feature_top Integer of the top features to visualize, the max is 15, due to a limit of palettes.
     #' @param Brewer.palID Palette set to be applied, see \link[RColorBrewer]{brewer.pal} or \link[OmicFlow]{fetch_palette}.
     #' @examples
-    #' obj <- tools$new(countData = "counts.csv",
+    #' obj <- omics$new(countData = "counts.csv",
     #'                  featureData = "features.txt",
     #'                  metaData = "metadata.tsv"
     #'
@@ -311,8 +365,8 @@ tools <- R6::R6Class(
     #'
     #' @return A long \link[data.table]{data.table} table.
     #' @seealso \link[OmicFlow]{composition_plot}
-    composition = function(feature_rank, feature_filter = NA, col_name = NA, sample.id = "SAMPLE-ID", feature_top = 10, Brewer.palID = "RdYlBu") {
-      # Copies object to prevent modification of tools class components
+    composition = function(feature_rank, feature_filter = NA, col_name = NULL, sample.id = "SAMPLE-ID", feature_top = 10, Brewer.palID = "RdYlBu", remove_na = FALSE) {
+      # Copies object to prevent modification of omics class components
       private$tmp_link(
         .countData = self$countData,
         .featureData = self$featureData,
@@ -327,7 +381,7 @@ tools <- R6::R6Class(
       self$normalize()
 
       # Remove NAs when col_name is specified
-      if (!is.na(col_name)) {
+      if (!is.null(col_name) & remove_na) {
         self$removeNAs(sample.id, col_name)
       }
 
@@ -372,11 +426,13 @@ tools <- R6::R6Class(
       colnames(final_long) <- c(feature_rank, "SAMPLE-ID", "value")
 
       # Adds metadata columns by user input
-      if (!is.na(col_name)) {
+      if (!is.null(col_name)) {
         composition_final <- base::merge(final_long,
                                          self$metaData[, .SD, .SDcols = c("SAMPLE-ID", col_name)],
                                          by = "SAMPLE-ID",
-                                         all.x = TRUE)
+                                         all = TRUE,
+                                         allow.cartesian = TRUE) %>%
+          unique()
       } else {
         composition_final <- final_long
       }
@@ -386,7 +442,7 @@ tools <- R6::R6Class(
       # Important for scale_fill_manual taxa order
       composition_final[[feature_rank]] <- factor(composition_final[[feature_rank]], levels = final_dt[[feature_rank]])
 
-      # Restores tools class components
+      # Restores omics class components
       private$tmp_restore()
 
       # returns results as list
@@ -413,7 +469,7 @@ tools <- R6::R6Class(
     #' @param outdir Output directory of pca.pairwise, outputs a pdf document.
     #' @param cpus Integer, number of cores to use. Default is 8 when parallelize is TRUE.
     #' @examples
-    #' obj <- tools$new(countData = "counts.csv",
+    #' obj <- omics$new(countData = "counts.csv",
     #'                  featureData = "features.txt",
     #'                  metaData = "metadata.tsv"
     #'
@@ -428,10 +484,10 @@ tools <- R6::R6Class(
     #'
     #' @return A list of \link[ggplot2]{ggplot} object.
     #' @seealso \link[OmicFlow]{ordination_plot}, \link[OmicFlow]{stats_plot}, \link[OmicFlow]{pairwise_anosim}, \link[OmicFlow]{pairwise_adonis}
-    ordination = function(metric = c("bray", "jaccard", "unifrac"), method = c("pcoa", "nmds"), group_by, distmat = NULL, weighted = FALSE, normalize = TRUE, parallel = FALSE,
+    ordination = function(metric = c("bray", "jaccard", "unifrac"), method = c("pcoa", "nmds"), group_by, distmat = NULL, weighted = TRUE, normalize = TRUE, parallel = FALSE,
                           pca.pairwise = FALSE, pca.max.explained = 80, pca.dim = c(1,2), outdir=".", cpus = 8, sample.id = "SAMPLE-ID") {
 
-      # Copies object to prevent modification of tools class components
+      # Copies object to prevent modification of omics class components
       private$tmp_link(
         .countData = self$countData,
         .featureData = self$featureData,
@@ -465,16 +521,22 @@ tools <- R6::R6Class(
         counts <- slam::as.simple_triplet_matrix(self$countData)
         rownames(counts) <- self$featureData$ID
 
-        if (metric == "unifrac") {
-          distmat <- rbiom::beta.div(biom = counts,
-                                     method = metric,
-                                     weighted = weighted,
-                                     tree = self$treeData)
-        } else {
-          distmat <- rbiom::beta.div(biom = counts,
-                                     method = metric,
-                                     weighted = weighted)
-        }
+        distmat <- switch(
+          metric,
+          "unifrac" = rbiom::bdiv_distmat(biom = counts,
+                                          bdiv = metric,
+                                          weighted = weighted,
+                                          tree = self$treeData),
+          "manhattan" = ,
+          "euclidean" = ,
+          "jaccard" = ,
+          "bray" = rbiom::bdiv_distmat(biom = counts,
+                                       bdiv = metric,
+                                       weighted = weighted)
+
+        )
+
+        plot_list$distances <- distmat
       }
 
       # Switch case to compute loading scores
@@ -487,12 +549,11 @@ tools <- R6::R6Class(
                                 trace = FALSE,
                                 autotransform = FALSE)
       )
-
       # Switch case to compute relevant statistics
       stats_results <- switch(
         method,
-        "pcoa" = pairwise_adonis(distmat, groups = na.omit(self$metaData[[ group_by ]])),
-        "nmds" = pairwise_anosim(distmat, groups = na.omit(self$metaData[[ group_by ]]))
+        "pcoa" = pairwise_adonis(distmat, groups = self$metaData[[ group_by ]]),
+        "nmds" = pairwise_anosim(distmat, groups = self$metaData[[ group_by ]])
       )
 
       # Normalization of eigenvalues
@@ -503,11 +564,12 @@ tools <- R6::R6Class(
 
         # Collects loading scores into dataframe
         df_pcs_points <- data.table::data.table(pcs$points)
-        colnames(df_pcs_points) <- base::sub("Dim", "PC", colnames(df_pcs_points))
+        colnames(df_pcs_points) <- paste0("PC", 1:ncol(df_pcs_points))
       } else if (method == "nmds") {
         df_pcs_points <- data.table::data.table(pcs$points)
         df_pcs_points$stress <- pcs$stress
       }
+      plot_list$pcs <- pcs
 
       # Adds relevant data
       df_pcs_points[, groups := self$metaData[[ group_by ]] ]
@@ -578,7 +640,7 @@ tools <- R6::R6Class(
                                                  metric)
       }
 
-      # Restores tools class components
+      # Restores omics class components
       private$tmp_restore()
 
       return(plot_list)
@@ -597,8 +659,9 @@ tools <- R6::R6Class(
     #' @param pvalue.threshold Integer, a P-value threshold to label and color significant features. Default is 0.05.
     #' @param foldchange.threshold Integer, a fold-change threshold to label and color significantly expressed features. Default is 0.06
     #' @param normalize Boolean, wether to normalize by total sample sums.
+    #' @param cpus Integer, number of cores to use. Default is 4, only used in \link[OmicFlow]{paired_fold}.
     #' @examples
-    #' obj <- tools$new(countData = "counts.csv",
+    #' obj <- omics$new(countData = "counts.csv",
     #'                  featureData = "features.txt",
     #'                  metaData = "metadata.tsv"
     #'
@@ -621,13 +684,14 @@ tools <- R6::R6Class(
     #' * A list of \link[ggplot2]{ggplot} object.
     #' * A long \link[data.table]{data.table} table.
     #' @seealso \link[OmicFlow]{volcano_plot}, \link[OmicFlow]{ViolinBoxPlot}, \link[OmicFlow]{paired_fold}, \link[OmicFlow]{unpaired_fold}
-    differential_feature_expression = function(feature_rank, sample.id, paired=FALSE, paired.id,
-                                               condition.group, condition_A, condition_B, pvalue.threshold=0.05, foldchange.threshold=0.06,
-                                               feature_filter = NA, feature_top = NA, normalize = TRUE) {
+    differential_feature_expression = function(sample.id, paired.id, feature_rank, paired=FALSE, normalize = TRUE,
+                                               condition.group, condition_A, condition_B,
+                                               pvalue.threshold=0.05, foldchange.threshold=0.06,
+                                               feature_filter = NULL, feature_top = NULL) {
       # Final output
       plot_list <- list()
 
-      # Copies object to prevent modification of tools class components
+      # Copies object to prevent modification of omics class components
       private$tmp_link(
         .countData = self$countData,
         .featureData = self$featureData,
@@ -639,7 +703,8 @@ tools <- R6::R6Class(
       self$removeNAs(sample.id, condition.group)
 
       # Agglomerate taxa by feature rank and filter unwanted taxa
-      self$feature_glom(feature_rank = feature_rank, feature_filter = feature_filter)
+      self$feature_glom(feature_rank = feature_rank,
+                        feature_filter = feature_filter)
 
       # normalization if applicable
       if (normalize) {
@@ -647,14 +712,15 @@ tools <- R6::R6Class(
       }
 
       # Check how many features to select (depended if volcano is desired)
-      if (!is.na(feature_top)) {
+      if (!is.null(feature_top)) {
         feature_top <- feature_top
       } else {
         feature_top <- nrow(self$featureData)
       }
 
       # Extract relative abundance
-      rel_abun <- Matrix::rowMeans(self$countData[1:feature_top,])
+      rel_abun <- as.matrix(Matrix::rowMeans(self$countData[1:feature_top,]))
+      rownames(rel_abun) <- self$featureData[[ feature_rank ]]
 
       # Creates long table of relative abundance
       dt <- sparse_to_dtable(self$countData)[, (feature_rank) := self$featureData[[feature_rank]]]
@@ -683,120 +749,21 @@ tools <- R6::R6Class(
       # Compute 2-fold expression based on (un)paired samples
       # Computes on equation oflog2(A) - log2(B)
       # Supports multiple inputs for A and B.
-      # For example A = T1, T2 and B = H1, H2
-      if (paired == TRUE) {
-        # sorting of metadata
-        condition.labels <- data.table::setorderv(self$metaData,
-                                                  cols = c(sample.id, paired.id, condition.group))[[ condition.group ]]
-        # paired samples
-        DFE <- paired_fold(dt = dt,
-                           sample.id = sample.id,
-                           paired.id = paired.id,
-                           condition_A = condition_A,
-                           condition_B = condition_B,
-                           unique.id = unique(self$metaData[[ paired.id ]]),
-                           condition_labels = condition.labels,
-                           feature_rank = feature_rank,
-                           cpus = cpus)
-        # Save data
-        plot_list$data <- DFE
+      condition.labels <- data.table::setorderv(self$metaData,
+                                                cols = c(sample.id, condition.group))[[ condition.group ]]
 
-      } else if (paired == FALSE) {
-        # sorting of metadata
-        condition.labels <- data.table::setorderv(self$metaData,
-                                                  cols = c(sample.id, condition.group))[[ condition.group ]]
-        # unpaired samples
-        DFE <- unpaired_fold(dt = dt,
-                             sample.id = sample.id,
-                             condition_A = condition_A,
-                             condition_B = condition_B,
-                             condition_labels = condition.labels,
-                             feature_rank = feature_rank,
-                             cpus = cpus)
-
-      } else {
-        stop("paired can only be TRUE or FALSE, check your input.")
-      }
-
-      # Generate heatmap plot with df_diff data
-      if (paired == TRUE) {
-        # Adds size to paired heatmap
-        add_columns <- unique(self$metaData[, .SD, .SDcols = c(sample.id, paired.id)])
-
-        merged_data <- base::merge(
-          stats_dt,
-          add_columns,
-          by = sample.id,
-          all.x = TRUE
+      # paired samples
+      DFE <- foldchange(
+        dt = dt,
+        sample.id = sample.id,
+        condition_A = condition_A,
+        condition_B = condition_B,
+        unique.ids = unique(self$metaData[[ paired.id ]]),
+        paired = paired,
+        condition_labels = condition.labels,
+        feature_rank = feature_rank
         )
 
-        # Subset merged data
-        subset_merged <- merged_data[, .SD, .SDcols = c(paired.id, feature_rank, "values")]
-        colnames(subset_merged) <- c("SAMPLE-ID", feature_rank, "values")
-
-        # Second merge
-        final_merge <- base::merge(
-          x = DFE,
-          y = subset_merged,
-          by = c("SAMPLE-ID", "Genus"),
-          all.x = TRUE
-        )
-
-        # Check if multiple diff_ are present
-        grouped_dt <- final_merge %>%
-          dplyr::group_by(`SAMPLE-ID`, Genus) %>%
-          dplyr::summarise(mean_values = mean(values, na.rum = TRUE),
-                           diff_1 = mean(diff_1, na.rm = TRUE)) %>%
-          dplyr::ungroup()
-
-
-        # Generating heatmap plot based on paired boolean
-        n_diff_columns <-  sum(grepl("^diff_", colnames(DFE)))
-
-        # Generate heatmap plot with df_diff data
-        heatmap_plot <- grouped_dt %>%
-          ggplot(mapping = aes(x = base::get(sample.id, DFE),
-                               y = base::get(feature_rank, DFE)))
-
-        # If there is only one column uses default settings
-        if (n_diff_columns == 1) {
-          heatmap_plot <- heatmap_plot +
-            geom_point(aes(size = mean_values, fill = diff_1), shape = 21)
-        } else {
-          # Adds geom_tile for number of diff_columns
-          for (i in 1:n_diff_columns) {
-            if (i == 1) {
-              heatmap_plot <- heatmap_plot +
-                geom_point(aes(size = mean_values, fill = !!sym(paste0("diff_", i))), shape = 21)
-            } else {
-              heatmap_plot <- heatmap_plot +
-                geom_point(aes(size = mean_values, fill = !!sym(paste0("diff_", i))),
-                           shape = 21,
-                           position = position_nudge(x = 0.5))
-            }
-
-          }
-        }
-        # Finishes heatmap plot
-        plot_list$tile_plot <- heatmap_plot +
-          theme_bw() +
-          theme(axis.text.x = element_text(angle = 45, hjust = 1, size=12),
-                axis.text.y = element_text(size=12),
-                axis.text = element_text(size=12),
-                text = element_text(size=12),
-                legend.text = element_text(size=12),
-                legend.title = element_text(size=14),
-                strip.background = element_rect(fill = "#EEEEEE", color = "#FFFFFF")) +
-          scale_y_discrete(limits = rev(levels(as.factor(grouped_dt[["Genus"]])))) +
-          scale_fill_gradient2(name = paste0("log2( A / B )"),
-                               low = "blue",
-                               mid = "white",
-                               high = "red",
-                               na.value = "grey80") +
-          scale_size_continuous(name = "Mean Rel. Abun. (%)", labels = scales::label_number(accuracy = 0.01)) +
-          labs(x = NULL,
-               y = NULL)
-      } else {
         #----------------------#
         # Visualization        #
         #----------------------#
@@ -809,18 +776,17 @@ tools <- R6::R6Class(
         n_diff_columns <- sum(grepl("^Log2FC_", colnames(DFE)))
 
         plot_list$volcano_plot <- lapply(1:n_diff_columns, function(i) {
-                volcano_plot(dt = DFE,
-                             X = paste0("Log2FC_", i),
-                             Y = paste0("pvalue_", i),
-                             feature_rank = feature_rank,
-                             pvalue.threshold = pvalue.threshold,
-                             logfold.threshold = foldchange.threshold,
-                             label_A = condition_A,
-                             label_B = condition_B)
-          })
+          volcano_plot(dt = DFE,
+                       X = paste0("Log2FC_", i),
+                       Y = paste0("pvalue_", i),
+                       feature_rank = feature_rank,
+                       pvalue.threshold = pvalue.threshold,
+                       logfold.threshold = foldchange.threshold,
+                       label_A = condition_A,
+                       label_B = condition_B)
+        })
 
-      }
-      # Restores tools class components
+      # Restores omics class components
       private$tmp_restore()
 
       return(plot_list)
@@ -841,7 +807,7 @@ tools <- R6::R6Class(
     triplot = function(feature_rank, feature_filter = NA, metadata.col = NA, sample.id="SAMPLE-ID",
                        choice_dim = c("RDA1", "PC1"), pairwise = FALSE,
                        Brewer.palID = "Set2", counts.scalar = 1) {
-      # Copies object to prevent modification of tools class components
+      # Copies object to prevent modification of omics class components
       private$tmp_link(
         .countData = self$countData,
         .featureData = self$featureData,
@@ -849,7 +815,10 @@ tools <- R6::R6Class(
         .treeData = self$treeData
       )
 
-      # Nested functions, later to be combined within tools-class
+      ## Return list of components
+      results <- list()
+
+      # Nested functions, later to be combined within omics-class
       logn <- function(otu_tab, scalar=1) {
         # log-transform, center
         # Y' = log ( A * Y + 1 ) ; where A is the 'strength' of the log transformation : 1, 10, 100, 1000, etc., default = 1
@@ -933,6 +902,8 @@ tools <- R6::R6Class(
                           na.action = na.fail,
                           subset = NULL)
 
+      results$model <- model
+
       # MAIN code
       # Subset species and sites scores
       model.dims <- dim(model$CCA$u)[2] + dim(model$CA$u)[2]
@@ -959,12 +930,14 @@ tools <- R6::R6Class(
 
       #Fetch groups
       mygroups <- get(metadata.col, self$metaData)
+      fills <- stats::setNames(RColorBrewer::brewer.pal(length(unique(mygroups)), "Set1"), unique(mygroups))
 
       # to be named: scores_sites
       dt <- data.table::data.table(data.frame(pc1 = scores_sites[, pc1],
                                               pc2 = scores_sites[, pc2],
                                               group = mygroups))
 
+      results$data <- dt
       # Get centroid centers for annotation
       df_mean.ord <- stats::aggregate(dt, by=list(dt$group),mean)
       colnames(df_mean.ord) <- c("Group", "x", "y")
@@ -991,43 +964,62 @@ tools <- R6::R6Class(
       # Convert to data.table
       data.table::setDT(df_hull)
 
-      # Restores tools class components
+      # Restores omics class components
       private$tmp_restore()
 
-      # Returns plot
-      return(
-        ggplot() +
-          geom_point(data = scores_sites, aes(x = .data[[pc1]],
-                                              y = .data[[pc2]]),
-                     shape = 21,
+
+      results$plot <- ggplot() +
+          # Polygon layer with first fill scale
+          geom_polygon(data = df_hull,
+                       aes(x = x,
+                           y = y,
+                           fill = Group),
+                       alpha = 0.2,
+                       color = "gray40",
+                       show.legend = FALSE) +
+          scale_fill_manual(values = fills) +
+          ggrepel::geom_label_repel(data=df_mean.ord,
+                                    aes(x=x, y=y, label=Group, fill=Group),
+                                    color = "black",
+                                    show.legend = FALSE) +
+          guides(fill = "none") +
+
+          # Reset fill scale for points
+          ggnewscale::new_scale_fill() +
+
+          # Main points layer with second fill scale
+          geom_point(data = dt,
+                     aes(x = .data[["pc1"]],
+                         y = .data[["pc2"]]),
                      fill = "steelblue",
-                     col = "black") +
-          geom_point(data = scores_species_merged, aes(x = .data[[pc1]],
-                                                       y = .data[[pc2]],
-                                                       size = .data[["explained_species_size"]],
-                                                       col = .data[["explained_species_label"]]),
+                     col = "black",
+                     shape = 21) +
+
+          # Species points layer
+          geom_point(data = scores_species_merged,
+                     aes(x = .data[[pc1]],
+                         y = .data[[pc2]],
+                         size = .data[["explained_species_size"]],
+                         col = .data[["explained_species_label"]],
+                         stroke = ifelse(scores_species_merged$explained_species_label != "", 1.5, 0.5)),
                      show.legend = TRUE,
-                     stroke = ifelse(scores_species_merged$explained_species_label != "", 1.5, 0.5),
                      shape = 22) +
-          geom_polygon(data=df_hull, aes(x=x, y=y, fill=Group),
-                       alpha = 0.2, color = "gray40", show.legend = FALSE) +
-          geom_text(data=df_mean.ord, aes(x=x, y=y, label=Group),
-                    color = "black", show.legend = FALSE) +
+
+          # Remaining formatting
           theme_bw() +
-          theme(axis.text.x = element_text(angle = 45, hjust = 1, size=12),
-                axis.text.y = element_text(size=12),
-                axis.text = element_text(size=12),
-                text = element_text(size=12),
-                legend.text = element_text(size=12),
-                legend.title = element_text(size=14),
-                strip.background = element_rect(fill = "#EEEEEE", color = "#FFFFFF")) +
+          theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
+                text = element_text(size = 12),
+                legend.text = element_text(size = 12),
+                legend.title = element_text(size = 14)) +
           scale_size_continuous(name = "rel. Abun.") +
           scale_color_manual(name = paste0(pc1, " explained species"),
                              values = colors) +
-          labs(x = paste0(pc1, " (", choice_dim.explained[ pc1 ], "%)"),
-               y = paste0(pc2, " (", choice_dim.explained[ pc2 ], "%)")) +
-          guides(fill = "none", colour = guide_legend(override.aes = list(stroke = 1.5)))
-      )
+          labs(x = paste0(pc1, " (", choice_dim.explained[pc1], "%)"),
+               y = paste0(pc2, " (", choice_dim.explained[pc2], "%)")) +
+          guides(fill = guide_legend(position = "bottom", override.aes = list(size = 2, color = "white")),
+                 colour = guide_legend(override.aes = list(stroke = 1.5)))
+
+        return(results)
     },
     #' @description
     #' Correlation Analysis, default spearm and automatic filter & Visualization based on thresholds
@@ -1039,7 +1031,7 @@ tools <- R6::R6Class(
     #' @param cor_threshold Float variable, used to filter taxa that meet the cor_threshold in both positive as negative values. Default is 0.6.
     #' @param normalize Boolean, wether to normalize by total sample sums.
     #' @examples
-    #' obj <- tools$new(countData = "counts.csv",
+    #' obj <- omics$new(countData = "counts.csv",
     #'                  featureData = "features.txt",
     #'                  metaData = "metadata.tsv"
     #'
@@ -1054,7 +1046,7 @@ tools <- R6::R6Class(
     #' A \link[ggplot2]{ggplot} object or \code{NULL} when no matches are found.
     correlation = function(feature_rank, feature_filter = NA, sample.id = "SAMPLE-ID",
                            cor_method = "spearman", cor_columns = c("BMI", "Weight"), cor_threshold = 0.6, normalize = TRUE) {
-      # Copies object to prevent modification of tools class components
+      # Copies object to prevent modification of omics class components
       private$tmp_link(
         .countData = self$countData,
         .featureData = self$featureData,
@@ -1088,7 +1080,7 @@ tools <- R6::R6Class(
       logical_mat <- cor_mat[apply(logical, 1, any), ]
       filter_NAs <- rownames(logical_mat)[!grepl("^NA", rownames(logical_mat))]
 
-      # Restores tools class components
+      # Restores omics class components
       private$tmp_restore()
 
       # Only visuakizes taxa meeting the correlation threshold
@@ -1162,15 +1154,24 @@ tools <- R6::R6Class(
     #' @param distance_metrics A character vector specifying what (dis)similarity metrics to use, default \code{c("unifrac")}
     #' @param dist_matrix A path to pre-computed distance matrix, expects tsv/csv/txt file from qiime2.
     #' @param alpha_div_table A path to pre-computed alpha diversity with rarefraction depth, expects tsv/csv/txt from qiime2.
-    #' @param cpus Number of cores to use, only used in \link[tools]{ordination} when dist_matrix is not supplied.
+    #' @param cpus Number of cores to use, only used in \link[omics]{ordination} when dist_matrix is not supplied.
     #'
     #' @return A nested list of \link[ggplot2]{ggplot} objects.
     autoFlow = function(feature_ranks = c("Phylum", "Family", "Genus"),
                         feature_filter = c("uncultured"),
                         distance_metrics = c("unifrac"),
-                        dist_matrix = NA,
-                        alpha_div_table = NA,
+                        dist_matrix = NULL,
+                        alpha_div_table = NULL,
                         cpus = 1) {
+
+      # Nested function
+      is_empty = function(obj) {
+        if (length(obj) == 0) {
+          return(NULL)
+        } else {
+          return(obj)
+        }
+      }
 
       # Plot results as list
       plots <- list()
@@ -1182,8 +1183,6 @@ tools <- R6::R6Class(
       self$metaData[, (RANKSTAT_colnames) := lapply(.SD, as.character), .SDcols = RANKSTAT_colnames]
       CORRELATION_data <- self$metaData[, .SD, .SDcols = grepl("CORRELATION_", metacols)]
 
-      # Standard rank stats
-      plots$rankstat_plot <- self$rankstat()
       #
       #---------------------------------------------#
       # Perform standard visualizations             #
@@ -1197,18 +1196,20 @@ tools <- R6::R6Class(
       # Object manipulation
       #
       self$feature_subset(Kingdom == "Bacteria")
+      # Standard rank stats
+      plots$rankstat_plot <- self$rankstat()
 
       # Main loop
       if (RANKSTAT_ncol > 0) {
 
         # Load custom distance matrix if supplied
-        if (!is.na(dist_matrix)) {
+        if (!is.null(dist_matrix)) {
           dist_matrix <- read_tsv_matrix(filename = dist_matrix)
           dist_matrix <- dist_matrix[self$metaData[["SAMPLE-ID"]], self$metaData[["SAMPLE-ID"]]]
         }
 
         # Load custom rarefraction alpha diversity table if supplied
-        if (!is.na(alpha_div_table)) {
+        if (!is.null(alpha_div_table)) {
           alpha_div_table <- read_rarefraction_qiime(filename = alpha_div_table)
         }
 
@@ -1238,10 +1239,9 @@ tools <- R6::R6Class(
                                                    values = "alpha_div",
                                                    col_name = col_name,
                                                    palette = fetch_palette(dt_final, col_name, "Set2"),
-                                                   method = "custom")
+                                                   method = "custom")$diversity
           } else {
-            alpha_div_plots[[i]] <- patchwork::wrap_plots(self$alpha_diversity(col_name = col_name, method = "shannon"),
-                                                          nrow = 1)
+            alpha_div_plots[[i]] <- self$alpha_diversity(col_name = col_name, method = "shannon")$diversity
           }
 
           # Create RDA1 vs PC1 triplot
@@ -1249,14 +1249,14 @@ tools <- R6::R6Class(
                                             feature_filter = feature_filter,
                                             metadata.col = col_name,
                                             pairwise = FALSE,
-                                            choice_dim = c("RDA1", "PC1"))
+                                            choice_dim = c("RDA1", "PC1"))$plot
 
           # Create PC1 vs PC2 triplot
           RDA_plots[[i, 2]] <- self$triplot(feature_rank = "Genus",
                                             feature_filter = feature_filter,
                                             metadata.col = col_name,
                                             pairwise = FALSE,
-                                            choice_dim = c("PC1", "PC2"))
+                                            choice_dim = c("PC1", "PC2"))$plot
 
 
           # Microbiome composition by all samples
@@ -1273,7 +1273,7 @@ tools <- R6::R6Class(
                                                           group_by = col_name)
 
             # Creates correlation ggplot as list
-            if (i == 1) {
+            if (i == 1 & length(CORRELATION_data) > 0) {
               correlation_plots[[j]] <- self$correlation(feature_rank = feature_ranks[j],
                                                          feature_filter = feature_filter,
                                                          cor_columns = colnames(CORRELATION_data))
@@ -1311,7 +1311,7 @@ tools <- R6::R6Class(
                                           cpus = cpus)
             }
 
-            pcoa_plots[[i, j]] <- patchwork::wrap_plots(tmp_plts,
+            pcoa_plots[[i, j]] <- patchwork::wrap_plots(tmp_plts[c("scree_plot", "anova_plot", "scores_plot")],
                                                         nrow = 1) +
               plot_layout(widths = c(rep(5, length(tmp_plts))),
                           guides = "collect")
@@ -1329,19 +1329,19 @@ tools <- R6::R6Class(
             }
 
 
-            nmds_plots[[i, j]] <- patchwork::wrap_plots(tmp_plts,
+            nmds_plots[[i, j]] <- patchwork::wrap_plots(tmp_plts[c("anova_plot", "scores_plot")],
                                                         nrow = 1) +
               plot_layout(widths = c(rep(5, length(tmp_plts))),
                           guides = "collect")
           }
         }
-        plots$alpha_div_plots <- alpha_div_plots
-        plots$correlation_plots <- correlation_plots
-        plots$composition_plots <- composition_plots
-        plots$Log2FC_plots <- Log2FC_plots
-        plots$pcoa_plots <- pcoa_plots
-        plots$nmds_plots <- nmds_plots
-        plots$rda_plots <- RDA_plots
+        plots$alpha_div_plots <- is_empty(alpha_div_plots)
+        plots$correlation_plots <- is_empty(correlation_plots)
+        plots$composition_plots <- is_empty(composition_plots)
+        plots$Log2FC_plots <- is_empty(Log2FC_plots)
+        plots$pcoa_plots <- is_empty(pcoa_plots)
+        plots$nmds_plots <- is_empty(nmds_plots)
+        plots$rda_plots <- is_empty(RDA_plots)
       }
 
       return(plots)
