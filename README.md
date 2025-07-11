@@ -1,74 +1,49 @@
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A523.10.0-23aa62.svg?labelColor=000000)](https://www.nextflow.io/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
+[![nf-test](https://img.shields.io/badge/tested_with-nf--test-337ab7.svg)](https://code.askimed.com/nf-test)
 
-# Introduction
-Running the nextflow pipeline requires the addition of parameters in the nextflow.config. By default the nextflow pipeline deploys singularity images make it possible to run on many clusters of CMBI. 
+## Introduction **metaBIOMx**
+
+The metagenomics microbiomics pipeline is a best-practice suite for the decontamination and annotation of sequencing data obtained via short-read shotgun sequencing. The pipeline contains [NF-core modules](https://github.com/nf-core/modules) and other local modules that are in the similar format. It can be runned via both docker and singularity containers.
+
+## Pipeline summary
+The pipeline is able to perform different taxonomic annotation on either (single/paired) reads or contigs. The different subworkflows can be defined via `--bypass_<method>` flags, a full overview is shown by running `--help`. By default the pipeline will check if the right databases are present in the right formats, when the path is provided. If this is not the case, compatible databases will be automatically downloaded.
+
+The pipeline performs preprocessing of the reads via the removal of primers or adapters via [cutadapt](https://cutadapt.readthedocs.io/en/stable/) and paired-end read merging via [PEAR](https://cme.h-its.org/exelixis/web/software/pear/doc.html).Before and after each step the quality control will be assessed via [fastqc](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) and a [multiqc](https://github.com/MultiQC/MultiQC) report is created as output. The denoising of single-end reads is performed via [DADA2](https://benjjneb.github.io/dada2/) in batches or in paralell with the module [run-dada2-batch](https://github.com/agusinac/run-dada2-batch).
+
+**Taxonomy assignment**
+
+**Diversity analysis**
+
+**Report/Visualisation**
+
+
+## Installation
+> [!NOTE]
+> Make sure you have installed the latest [nextflow](https://www.nextflow.io/docs/latest/install.html#install-nextflow) version! 
+
+Clone the repository in a directory of your choice:
+```bash
+git clone https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metataxonomics-DSL2.git
+```
+
+The pipeline is containerised, meaning it can be runned via docker or singularity images. No further actions need to be performed when using the docker profile, except a docker registery needs to be set on your local system, see [docker](https://docs.docker.com/engine/install/). In case singularity is used, please specify the `singularity.cacheDir` in the `nextflow.config` so that singularity images are saved there and re-used again.
 
 ## Usage
-Clone repository:
+Since the latest version, metaBIOMx works with both a samplesheet (CSV) format or a path to the input files. Preferably, samplesheets should be provided.
 ```bash
-git clone --recurse-submodules https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metataxonomics-DSL2.git
+nextflow run main.nf --input <samplesheet.csv> -work-dir work -profile singularity
+nextflow run main.nf --input <'*_{1,R1,2,R2}.{fq,fq.gz,fastq,fastq.gz}'> -work-dir work -profile singularity
 ```
 
-## Running from command line
-```bash
-nextflow run metataxonomics-DSL2/qiime.nf -c metataxonomics-DSL2/nextflow.config -work-dir /your/work/dir --cpus 5
-```
+## Support
 
-## Running as a jobscript
-Make sure to have the cores specified in ``-pe smp`` the same as in ``--cpus``.
-In case nextflow is in your anaconda/miniconda environment, it is required to use ``eval "$(conda shell.bash hook)"`` prior to ``conda activate`` and ``nextflow run``.
-```bash
-#!/bin/bash
-#$ -N jobname
-#$ -o jobname.out
-#$ -e jobname.err
-#$ -V
-#$ -q all.q@narrativum.umcn.nl
-#$ -pe smp 5
+If you are having issues, please [create an issue](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metataxonomics-DSL2/-/issues)
 
-eval "$(conda shell.bash hook)" 
-conda activate nextflow
-cd $HOME
-nextflow run metataxonomics-DSL2/qiime.nf -c metataxonomics-DSL2/nextflow.config -work-dir /your/work/dir --cpus 5 -profile singularity
+## Citations
 
-```
+You can cite the `metataxonx` using the following DOI: 
 
-## Setting up docker
-For now docker images must be pulled as follows:
-```bash
-docker pull agusinac/pyrrr:0.2.0
-docker pull agusinac/run-dada2-batch:0.0.1
-docker pull agusinac/autoflow:0.0.1
-docker pull quay.io/qiime2/core:2020.8
-```
-
-## Setting up singularity
-For now singularity images are still depended on the docker pull commands. Execute the following commands after navigating to the ``metataxonomics-DSL2`` folder.
-```bash
-cd containers/singularity
-# pyrrr
-docker pull agusinac/pyrrr:0.2.0
-docker save agusinac/pyrrr:0.2.0 -o pyrrr_v2.tar
-singularity build pyrrr_v2.sif docker-archive://pyrrr_v2.tar
-rm pyrrr_v2.tar
-
-# dada2 batch
-docker pull agusinac/run-dada2-batch:0.0.1
-docker save docker agusinac/run-dada2-batch:0.0.1 -o parallel_dada2.tar
-singularity build parallel_dada2.sif docker-archive://parallel_dada2.tar
-rm parallel_dada2.tar
-
-# omicflow
-docker pull agusinac/autoflow:0.0.1
-docker save docker agusinac/autoflow:0.0.1 -o omicflow.tar
-singularity build omicflow.sif docker-archive://omicflow.tar
-rm omicflow.tar
-
-# qiime2
-docker pull quay.io/qiime2/core:2020.8
-docker save docker quay.io/qiime2/core:2020.8 -o qiime2.tar
-singularity build qiime2.sif docker-archive://qiime2.tar
-rm qiime2.tar
-```
+An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md)
+file.

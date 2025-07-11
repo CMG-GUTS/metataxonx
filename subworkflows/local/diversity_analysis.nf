@@ -57,12 +57,11 @@ workflow DIVERSITY_ANALYSIS {
     rooted_tree_newick              = FASTTREE.out.rooted_tree_newick
     rooted_tree_qza                 = FASTTREE.out.rooted_tree_qza
     alpha_div_metrics               = ALPHA_RAREFACTION.out.alpha_div_metrics
-    merged_alpha_div                = Channel.empty() // TODO: debug channel type, occurs during save_output in main workflow
+    merged_alpha_div                = MERGE_ALPHA_DIVERSITY.out.alpha_div
     alpha_div_shannon               = ALPHA_RAREFACTION.out.shannon_file
     qiime_alpha_file                = ALPHA_RAREFACTION.out.qiime_alpha_file
     beta_div_metrics                = CORE_DIVERSITY.out.beta_div_metrics
     beta_rarefaction_qiime          = BETA_RAREFACTION.out.beta_rarefaction_qiime
-    beta_rarefaction_files          = Channel.empty() // TODO: debug channel type, occurs during save_output in main workflow
     wunifrac_matrix                 = CORE_DIVERSITY.out.wunifrac_matrix
     weighted_unifrac_tree           = BETA_RAREFACTION.out.weighted_unifrac_tree
     versions                        = ch_versions
