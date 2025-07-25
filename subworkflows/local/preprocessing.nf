@@ -38,7 +38,7 @@ workflow PREPROCESSING {
     if (!params.bypass_trim) {
         CUTADAPT(
             reads
-        ).trimmed.set { ch_trimmed_reads }
+        ).reads.set { ch_trimmed_reads }
 
         FASTQC_trim(ch_trimmed_reads)
         MULTIQC_trim(
