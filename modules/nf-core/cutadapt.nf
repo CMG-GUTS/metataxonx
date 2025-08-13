@@ -16,20 +16,26 @@ process CUTADAPT {
     script:
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
+	def adapters = ""
+	def primers = ""
+
     // adapter options
-    if (params.standard_primers) {
-        def adapters = meta.single_end ? "-a ${params.custom_adapter_1}" : "-a ${params.custom_adapter_1} -A ${params.custom_adapter_2}"
+    if (params.custom_adapter_1 == null) {
+        adapters = meta.single_end ? "-a file:${params.standard_adapters}" : "-a file:${params.standard_adapters} -A file:${params.standard_adapters}"
     } else {
-        def adapters = meta.single_end ? "-a file:${params.standard_adapters}" : "-a file:${params.standard_adapters} -A file:${params.standard_adapters}"
+		adapters = meta.single_end ? "-a ${params.custom_adapter_1}" : "-a ${params.custom_adapter_1} -A ${params.custom_adapter_2}"
     }
+	
     // primer options
-    if (params.standard_primers) {
-        def primers = meta.single_end ? "-g ${params.custom_primer_1}" : "-g ${params.custom_primer_1} -G ${params.custom_primer_2}"
+	if (params.custom_primer_1 == null) {
+        primers = meta.single_end ? "-g file:${params.standard_primers}" : "-g file:${params.standard_primers} -G file:${params.standard_primers}"
     } else {
-        def primers = meta.single_end ? "-g file:${params.standard_primers}" : "-g file:${params.standard_primers} -G file:${params.standard_primers}"
+        primers = meta.single_end ? "-g ${params.custom_primer_1}" : "-g ${params.custom_primer_1} -G ${params.custom_primer_2}"
     }
+    
     // output files
     def trimmed = meta.single_end ? "-o ${prefix}.trim.fastq.gz" : "-o ${prefix}_1.trim.fastq.gz -p ${prefix}_2.trim.fastq.gz"
+    
     """
     cutadapt \\
         -j $task.cpus \\
