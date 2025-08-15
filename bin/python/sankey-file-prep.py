@@ -1,22 +1,18 @@
 #!/usr/bin/python3
 
 # Author: Harm Laurense
-# Last edited: 13-11-2021
+# Last edited: 15-08-2025 [by TE]
 # Function: This script is used to create the necessary .csv files to create sankey diagram(s) using R.
-# Bugs:
-# TODO: This script potentially needs altering for it to be implemented into nextflow.
-# TODO: Bugtesting; test what happens when input of files is altered for example.
-
-
-#Parameter 1: Integer/Float for filtering
-#Parameter 2: String (boolean principle*) for creating a .csv file for each individual sample
-#* Checks if input is equal to "true". Booleans are a bit tricky / quick to error in command lines flags.
-#Parameter 3: String input for the metadata file
-#Parameter 4: String (booleon principle*) for creating a .csv file for each unique rankstat combination of samples
-#Parameter 5: String input for the biotaviz file.
 #
-#Typical run::
-#python3 .\sankey-file-prep.py 0.01 false Metadata.tsv false relative-table_kopie_test.biotaviz_test.txt
+# Parameter 1: Integer/Float for filtering of taxa based on their (average) rel. abund.
+# Parameter 2: String ( boolean principle* ) for creating a .csv file for each individual sample.
+# Parameter 3: String input for the metadata file.
+# Parameter 4: String ( booleon principle* ) for creating a .csv file for each unique rankstat combination of samples.
+# Parameter 5: String input for the biotaviz file.
+# * checks if input is equal to "true"
+#
+# Typical run:
+# python3 .\sankey-file-prep.py 0.01 false false metadata.tsv relative-table.biotaviz.txt
 
 import csv
 import sys
@@ -50,35 +46,31 @@ def main(tax_filter, sample_repeat, mappingfile, combine_rankstat):
     :param sample_repeat: Parameter which determines if files are created for every individual sample.
     :return: .csv files according to user input, to be used in R script for creating the sankey diagrams
     """
-    # Create a .csv file for every sample (needed for generating sankey diagram in R script)
+    # [DEFAULT] Create sample average file over all samples (includes samples without metadata values)
+    sample_average_all()
+
+    # [REPEAT = TRUE] Create a .csv file for every sample (needed for generating sankey diagram in R script)
     if sample_repeat.lower() == "true":
         total_samples = determine_sample_total()
         for sample in range(total_samples):
             hierarchy_counts(tax_filter, sample, average_all_samples, filename_combination)
 
-    # Create .csv file iterative over all possible rankstat combinations
-    if combine_rankstat.lower() == "true":
-        # Preparation for creating .csv files for averaged samples (based on the Metadata file)
-        all_sets = get_sets(mappingfile)
-        sample_index = determine_sample_index()
-        combinations_rankstatheaders, unique_sample_combinations = determine_all_rankstat_combinations(all_sets)
-        indexed_combinations = combination_to_index(sample_index, unique_sample_combinations)
-
-        # Create sample average file for each unique sample combination
-        for index, combination in enumerate(indexed_combinations):
-            sample_average(combination, combinations_rankstatheaders[index])
-
-    # Create sample average file for every individuel rankstat column
+    # [DEFAULT] Create sample average file each Rankstat column
     all_sets = get_sets(mappingfile)
-    sample_index = determine_sample_index()
-    filename_rankstatheaders, rankstat_samples = determine_rankstat_samples(all_sets)
-    indexed_combinations = combination_to_index(sample_index, rankstat_samples)
-    for index, combination in enumerate(indexed_combinations):
-        sample_average(combination, filename_rankstatheaders[index])
+    if len( all_sets.keys() ) > 0 :
+		
+        for set in all_sets :
+            filename_rankstatheaders, rankstat_samples = determine_rankstat_samples(set, all_sets[set])
+            sample_index = determine_sample_index()				
+            indexed_combinations = combination_to_index(sample_index, rankstat_samples)
 
-    # Create sample average file over all samples (includes samples without metadata values)
-    sample_average_all()
+            allcolumnsamples = sum(indexed_combinations, [])
+            sample_average(allcolumnsamples, set) # for all samples, in one Rankstat column
 
+            # [COMBINE = TRUE] Create sample average file for every individuel study group in a Rankstat column
+            if combine_rankstat.lower() == "true": 
+                for index, combination in enumerate(indexed_combinations):
+                    sample_average(combination, filename_rankstatheaders[index]) # for samples in each different study group, in one Rankstat column
 
 def determine_sample_total():
     """
@@ -91,8 +83,7 @@ def determine_sample_total():
             total_samples = len(line.rstrip().split('\t')[2:])
         return total_samples
     except IndexError:
-        print("IndexError; check if the correct file is given as input: ", traceback.print_exc())
-
+        print("# IndexError; check if the correct file is given as input: ", traceback.print_exc())
 
 def hierarchy_counts(tax_filter, sample, average_samples, filename_combination):
     """
@@ -108,9 +99,10 @@ def hierarchy_counts(tax_filter, sample, average_samples, filename_combination):
     link2 = ["link2", "link2"]
     label = [["label", "value"]]
     count = 0
+    nonzeros = 0
     last_rank = "empty"
-    # Currently used only for testing purposes (tax_filter control)
     removed_entries = []
+ 
     try:
         with open(biotavizfile, "r") as file:
             for _ in range(1):  # skip column headers + root
@@ -119,11 +111,14 @@ def hierarchy_counts(tax_filter, sample, average_samples, filename_combination):
             for index, line in enumerate(file.readlines()):
                 if line.strip():
                     line = line.rstrip().split('\t')
-                    if len(average_samples) > 0:
+                    if sample == 'AVRG':
                         tax_value = float(average_samples[index])
+                        if tax_value > 0 : nonzeros += 1
                     else:
                         # Skip first 2 columns
                         tax_value = float(line[sample + 2])
+                        if tax_value > 0 : nonzeros += 1
+                   
                     # Values of 0 (relative abundance) or below taxonomic filter (standard 1%) aren't used
                     if tax_value >= tax_filter and tax_value > 0:
                         tax_rank = line[1].split('-')[0].rstrip()
@@ -135,6 +130,7 @@ def hierarchy_counts(tax_filter, sample, average_samples, filename_combination):
                         label.append([tax_with_score, tax_value])
                     else:
                         removed_entries.append(line)
+
             # The following is the logic to determine the number combinations for connecting the nodes
             for rank in taxonomic_rank:
                 if rank == "domain":
@@ -153,16 +149,15 @@ def hierarchy_counts(tax_filter, sample, average_samples, filename_combination):
                     link2.append(count)
                     last_rank = rank
                     taxonomic_ranks_last_linked_rank_dict.update({rank: link1[-1]})
-        if len(label) > 1:
-            # print(removed_entries)
+
+        if nonzeros == 0 :
+            print("# WARNING: The following sample contains only zero values, we will therefore skip the creation of a Sankey plot for :", sample) 
+        elif len(label) > 1:
             write_new_biotaviz_file(link1, link2, label, sample, average_samples, filename_combination)
         else:
-            sys.exit(print(
-                "No matches with current criteria found, try lowering the given filter for "
-                "relative abundance"))
+            sys.exit(print("# No matches with current criteria found, try lowering the given filter for relative abundance"))
     except IndexError:
-        print("IndexError; check if the correct file is given as input: ", traceback.print_exc())
-
+        print("# IndexError; check if the correct file is given as input: ", traceback.print_exc())
 
 def write_new_biotaviz_file(link1, link2, label, sample, average_samples, filename_combination):
     """
@@ -186,8 +181,7 @@ def write_new_biotaviz_file(link1, link2, label, sample, average_samples, filena
             for index, number in enumerate(link1):
                 wr.writerow([number, link2[index], label[index][0], label[index][1]])
     except IndexError:
-        print("IndexError; can't write to biotaviz_sankey_prepfile-{sample}.csv: ", traceback.print_exc())
-
+        print("# IndexError; can't write to biotaviz_sankey_prepfile-{sample}.csv: ", traceback.print_exc())
 
 def get_sets(filename):
     """
@@ -215,7 +209,6 @@ def get_sets(filename):
                 datasets[dataset][sample_class].append(sample_id)
     return datasets
 
-
 def load_txt(filename):
     """
     Opens files and returns their input/content
@@ -226,7 +219,6 @@ def load_txt(filename):
     text = fileinput.read()
     fileinput.close()
     return text
-
 
 def determine_sample_index():
     """
@@ -242,10 +234,9 @@ def determine_sample_index():
                 sample_index.update({header: index + 2})
         return sample_index
     except IndexError:
-        print("IndexError; check if the correct file is given as input: ", traceback.print_exc())
+        print("# IndexError; check if the correct file is given as input: ", traceback.print_exc())
 
-
-def determine_rankstat_samples(all_sets):
+def determine_rankstat_samples(header, set):
     """
     Create two lists necessary for unique filenames and to determine index + average of samples in following functions
     :param all_sets: Dictionary containing each rankstat column, containing all unique values with corresponding samples
@@ -253,36 +244,13 @@ def determine_rankstat_samples(all_sets):
     """
     rankstat_samples = []
     filename_rankstatheaders = []
-    for keys, values in all_sets.items():
-        for item in values.items():
-            column_value = str(keys) + "-" + str(item[0])
-            filename_rankstatheaders.append(column_value)
-            rankstat_samples.append(item[1])
+    for key in set:
+        column_value = header + "-" + key
+        filename_rankstatheaders.append(column_value)
+        sample_value = set[key]
+        rankstat_samples.append(sample_value)
 
     return filename_rankstatheaders, rankstat_samples
-
-
-def determine_all_rankstat_combinations(all_sets):
-    """
-    Create two lists necessary for unique filenames and to determine index + average of samples in following functions
-    These are based on all possible combinations between rankstat columns, rather than individual rankstat columns.
-    :param all_sets: Dictionary containing each rankstat column, containing all unique values with corresponding samples
-    :return: A list containing the filenames (rankstat+unique_value) and a nested list containing their corresponding
-    samples (unique sample combination, no duplicates)
-    """
-    unique_sample_combinations = []
-    all_names = sorted(all_sets)
-    combinations_rankstatheaders = list(itertools.product(*(all_sets[Name] for Name in all_names)))
-    combinations_samples = list(itertools.product(*(all_sets[Name].values() for Name in all_names)))
-    # Make a new list containing only unique samples for each combination
-    for index, combination in enumerate(combinations_samples):
-        unique_sample_combinations.append([])
-        for allsamples in combination:
-            for sample in allsamples:
-                if sample not in unique_sample_combinations[index]:
-                    unique_sample_combinations[index].append(sample)
-    return combinations_rankstatheaders, unique_sample_combinations
-
 
 def combination_to_index(sample_index, unique_sample_combinations):
     """
@@ -299,7 +267,6 @@ def combination_to_index(sample_index, unique_sample_combinations):
             indexed_combinations[index].append(sample_index.get(unique_sample))
         indexed_combinations[index] = sorted(indexed_combinations[index])
     return indexed_combinations
-
 
 def sample_average(combination, combination_header):
     """
@@ -321,10 +288,13 @@ def sample_average(combination, combination_header):
                         rankstat_values.append(float(line[rankstat_column_index]))
                     average_samples.append(sum(rankstat_values) / len(rankstat_values))
                     rankstat_values = []
-        hierarchy_counts(tax_filter, sample, average_samples, combination_header)
-    except IndexError:
-        print("IndexError; check if the correct file is given as input: ", traceback.print_exc())
+        if ( all(i == 0 for i in average_samples) ) :
+            print("# WARNING: The following combination of study groups contains only zero values, we will therefore skip the creation of a Sankey plot for :", combination_header)
+        else :
+            hierarchy_counts(tax_filter, 'AVRG', average_samples, combination_header)
 
+    except IndexError:
+        print("# IndexError; check if the correct file is given as input: ", traceback.print_exc())
 
 def sample_average_all():
     """
@@ -344,10 +314,14 @@ def sample_average_all():
                         all_samples.append(float(value))
                     average_samples_all.append(sum(all_samples) / len(all_samples))
         filename_part = "AverageAllSamples"
-        hierarchy_counts(tax_filter, sample, average_samples_all, filename_part)
-    except IndexError:
-        print("IndexError; check if the correct file is given as input: ", traceback.print_exc())
 
+        if ( all(average_samples_all) == 0 ) :
+            sys.exit(print("# ERROR: The average of all samples contains only zero values, we will therefore skip the creation of a Sankey plot for : AverageAllSamples"))
+        else : 
+            hierarchy_counts(tax_filter, 'AVRG', average_samples_all, filename_part)
+
+    except IndexError:
+        print("# IndexError; check if the correct file is given as input: ", traceback.print_exc())
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Sankey file preparation", add_help=True)
@@ -361,20 +335,20 @@ if __name__ == "__main__":
     # Global variables
     filename_combination = ""
     biotavizfile = options['infile']
-    sample = 0
-    average_all_samples = []
+    ## sample = "AVRG"
+    average_all_samples = ""
     tax_filter = options['tax_filter']
     sample_repeat = options['sample_repeat']
     mappingfile = options['mapping']
     combine_rankstat = options['combine_rankstat']
 
     # Main
-    if 0 > tax_filter < 1:
-        sys.exit(print("Use a number between 0 and 1 as parameter for filtering relative abundance"))
+    if not (tax_filter > 0 and tax_filter < 1):
+        sys.exit(print("# Use a number between 0 and 1 as parameter for filtering relative abundance"))
     try:
         main(tax_filter, sample_repeat, mappingfile, combine_rankstat)
     except ValueError:
-        print("Parameter given was not a valid numeric value: ", traceback.print_exc())
-        print("If the input is a decimal number, use a decimal point instead of comma (eg 0.01 instead of 0,01)")
+        print("# Parameter given was not a valid numeric value: ", traceback.print_exc())
+        print("# If the input is a decimal number, use a decimal point instead of comma (eg 0.01 instead of 0,01)")
     except IndexError:
-        print("Not enough parameters were given: ", traceback.print_exc())
+        print("# Not enough parameters were given: ", traceback.print_exc())
