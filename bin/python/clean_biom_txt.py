@@ -30,8 +30,9 @@ def clean_trace(tax_trace):
         if undefined is True:
             if empty is True:
                 taxon += "Unclassified"
-            new_taxon = taxon + '_'+last_known.replace("__", "_")
-            tax_trace[i] = new_taxon
+            # new_taxon = taxon + '_'+last_known.replace("__", "_")
+            # tax_trace[i] = new_taxon
+            tax_trace[i] = ''
         else:
             last_known = taxon
     return tax_trace
