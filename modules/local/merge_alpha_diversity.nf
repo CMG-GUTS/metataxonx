@@ -16,13 +16,15 @@ process MERGE_ALPHA_DIVERSITY {
 
     qiime tools export \\
         --input-path combined-alpha-metadata.qzv \\
-		--output-path data
+        --output-path data
 
-	cp data/metadata.tsv alpha_diversity.txt
+    cp data/metadata.tsv alpha_diversity.txt
+
+    qiime_version=\$(qiime --version | head -1 | sed -E 's/.*version ([0-9]+\\.[0-9]+\\.[0-9]+).*/\\1/')
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        qiime: \$(qiime --version)
+        qiime: \$qiime_version
     END_VERSIONS
     """
 

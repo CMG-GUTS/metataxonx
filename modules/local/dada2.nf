@@ -24,8 +24,18 @@ process DADA2 {
     
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        R: \$(R --version)
+        R: \$(R --version | head -1)
+        dada2: \$(Rscript -e 'cat(as.character(packageVersion("dada2")))')
     END_VERSIONS
+
+    # Rewrite the R version
+    sed -i.bak -E '
+    /^ *R:/ s/(: *).*\\b([0-9]+\\.[0-9]+\\.[0-9]+)\\b.*/\\1 \\2/
+    ' versions.yml
+
+    # Rename and resize image for multiqc
+    rename s'/.png/_mqc.png/' *errProfile_*
+    mogrify -resize 800x800 *.png
 
     """
     
@@ -41,6 +51,7 @@ process DADA2 {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         R: \$(R --version)
+        dada2: \$(Rscript -e 'cat(as.character(packageVersion("dada2")))')
     END_VERSIONS
     """
 }

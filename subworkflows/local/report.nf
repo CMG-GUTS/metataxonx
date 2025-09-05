@@ -1,60 +1,80 @@
 /*
 
-    
+    REPORT CREATION
 
 */
+
 include { CREATE_ANALYSIS_MAPPING } from '../../modules/local/create_analysis_mapping.nf'
 include { BIOTAVIZ } from '../../modules/local/biotaviz.nf'
 include { SANKEYPLOTS } from '../../modules/local/sankeyplots.nf'
-include { OMICFLOW } from '../../modules/local/omicsflow.nf'
+include { MULTIQC } from '../../modules/local/multiqc.nf'
+include { OMICFLOW } from '../../modules/local/omicflow.nf'
 
+import org.yaml.snakeyaml.Yaml
 
 workflow REPORT {
     take:
     biom
     metadata
     rooted_tree_newick
-    weighted_unifrac_file
-    shannon_file
-    reads_stats_file
-    dada2_errors
+    ch_multiqc_files
+    ch_versions
 
     main:
-    ch_versions = Channel.empty() 
+
+    BIOTAVIZ(biom)
+    ch_versions = ch_versions.mix(BIOTAVIZ.out.versions)        
 
     if (metadata) {
         CREATE_ANALYSIS_MAPPING(
             metadata
         ).mapping.set{ metadata_ch }
+
+        sankeplots_ch = SANKEYPLOTS(
+            metadata_ch,
+            BIOTAVIZ.out.biotaviz_relative
+        )
+        ch_versions = ch_versions.mix(SANKEYPLOTS.out.versions)
+
+        OMICFLOW(
+            metadata_ch,
+            biom,
+            rooted_tree_newick
+        ).report.set{ omicflow_report }
+        ch_versions = ch_versions.mix(OMICFLOW.out.versions)
+
+    } else {
+        omicflow_report = Channel.empty()
+        sankeplots_ch = Channel.empty()
     }
 
-    BIOTAVIZ(biom)
-    ch_versions = ch_versions.mix(BIOTAVIZ.out.versions)        
+    // Combine all versions
+    ch_versions_parsed = ch_versions.collect().map { fileList ->
+        def all_versions = []
+        fileList.each { filePath ->
+            File f = filePath.toFile()
+            if (f.exists()) {
+                def versions = new Yaml().load(f.text)
+                all_versions += versions
+            }
+        }
+        return all_versions.unique()
+    }
 
-    SANKEYPLOTS(
-        metadata_ch,
-        BIOTAVIZ.out.biotaviz_relative
+    MULTIQC(
+        ch_multiqc_files,
+        params.multiqc_config,
+        ch_versions_parsed,
+        [], [], [], []
     )
-    ch_versions = ch_versions.mix(SANKEYPLOTS.out.versions)
-
-    OMICFLOW(
-        metadata_ch,
-        biom,
-        rooted_tree_newick,
-        weighted_unifrac_file,
-        shannon_file,
-        Channel.empty(),
-        SANKEYPLOTS.out.sankey_image,
-        dada2_errors
-    )
-    ch_versions = ch_versions.mix(OMICFLOW.out.versions)
 
     emit:
     biotaviz_clean                  = BIOTAVIZ.out.biotaviz_clean
     biotaviz_relAbun                = BIOTAVIZ.out.biotaviz_relative
     asv_table_with_taxonomy         = BIOTAVIZ.out.asv_table_with_taxonomy_test
-    sankey_html                     = SANKEYPLOTS.out.sankey_html
-    sankey_png                      = SANKEYPLOTS.out.sankey_image
-    report                          = OMICFLOW.out.report
+    sankey_html                     = sankeplots_ch.sankey_html.ifEmpty(null)
+    sankey_png                      = sankeplots_ch.sankey_image.ifEmpty(null)
+    technical_report                = MULTIQC.out.report
+    analysis_report                 = omicflow_report
     versions                        = ch_versions
 }

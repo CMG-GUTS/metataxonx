@@ -17,15 +17,20 @@ Typical run::
 Run the script with '-h' for a list of options.
 """
 from argparse import ArgumentParser
-from utils.tools import checksZeroDivision
 import sys
 
 ############
 # SETTINGS #
 ############
+
+def checksZeroDivision(num1, num2):
+    if num1 == 0.0 or num2 == 0.0:
+        return 0.0
+    else:
+        return num1 / num2
+
 # note: default parameters are set in argparse object (top of __main__)
 description = "Convert raw-count BiotViz-style file to relative abundance version. First non-header line must be the root (i.e., total count)!"
-
 
 # main program
 if __name__ == '__main__':

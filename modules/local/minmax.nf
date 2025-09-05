@@ -17,9 +17,14 @@ process MINMAX {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        python: \$(python3 --version)
+        python: \$(python3.11 --version)
         biom: \$(biom --version)
     END_VERSIONS
+
+    sed -i.bak -E '
+    /^ *python:/ s/(: *).*\\b([0-9]+\\.[0-9]+\\.[0-9]+)\\b.*/\\1 \\2/
+    /^ *biom:/ s/(: *).*\\b([0-9]+\\.[0-9]+\\.[0-9]+)\\b.*/\\1 \\2/
+    ' versions.yml
     """
 
     stub:
@@ -29,7 +34,7 @@ process MINMAX {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        python: \$(python3 --version)
+        python: \$(python3.11 --version)
         biom: \$(biom --version)
     END_VERSIONS
     """

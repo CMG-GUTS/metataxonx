@@ -16,25 +16,27 @@ process CORE_DIVERSITY {
     script:
     """
     qiime diversity core-metrics-phylogenetic \\
-		--m-metadata-file ${metadata} \\
-		--i-phylogeny ${tree} \\
-		--i-table ${table} \\
+        --m-metadata-file ${metadata} \\
+        --i-phylogeny ${tree} \\
+        --i-table ${table} \\
         --p-sampling-depth "\$(<${mincount})" \\
-		--output-dir diversity_core \\
-		--p-n-jobs-or-threads ${task.cpus} \\
-		--quiet
+        --output-dir diversity_core \\
+        --p-n-jobs-or-threads ${task.cpus} \\
+        --quiet
 
-	for i in diversity_core/*distance*; do \\
+    for i in diversity_core/*distance*; do \\
             qiime tools export \\
                 --input-path \$i \\
-		        --output-path \$i.data; \\
-		    mv \$i.data/distance-matrix.tsv ./\$i.txt; done
+                --output-path \$i.data; \\
+            mv \$i.data/distance-matrix.tsv ./\$i.txt; done
 
     mv diversity_core/*.txt .
 
+    qiime_version=\$(qiime --version | head -1 | sed -E 's/.*version ([0-9]+\\.[0-9]+\\.[0-9]+).*/\\1/')
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        qiime: \$(qiime --version)
+        qiime: \$qiime_version
     END_VERSIONS
     """
 

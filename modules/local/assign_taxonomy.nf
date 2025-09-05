@@ -33,11 +33,13 @@ process ASSIGN_TAXONOMY {
      sed 's/Taxon/taxonomy/' | \\
      sed 's/Consensus/consensus/' > taxonomy/taxonomy_relabeled.tsv
      mv taxonomy/taxonomy_relabeled.tsv ./taxonomy.tsv
-     
-     cat <<-END_VERSIONS > versions.yml
-     "${task.process}":
-          qiime: \$(qiime --version)
-     END_VERSIONS
+
+    qiime_version=\$(qiime --version | head -1 | sed -E 's/.*version ([0-9]+\\.[0-9]+\\.[0-9]+).*/\\1/')
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        qiime: \$qiime_version
+    END_VERSIONS
      """
 
      stub:

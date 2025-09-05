@@ -25,13 +25,15 @@ process BETA_RAREFACTION {
 
     qiime tools export \\
         --input-path beta_rarefaction.qzv \\
-		--output-path beta_rarefaction
+        --output-path beta_rarefaction
 
     cp beta_rarefaction/sample-clustering-upgma.tre ./weighted_unifrac_tree.newick
 
+    qiime_version=\$(qiime --version | head -1 | sed -E 's/.*version ([0-9]+\\.[0-9]+\\.[0-9]+).*/\\1/')
+
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        qiime: \$(qiime --version)
+        qiime: \$qiime_version
     END_VERSIONS
     """
 

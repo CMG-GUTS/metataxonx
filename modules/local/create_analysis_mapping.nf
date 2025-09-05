@@ -10,11 +10,11 @@ process CREATE_ANALYSIS_MAPPING {
     script:
     // Get the columns to keep
     def keep_columns = mapping_rows[0].keySet().findAll { 
-        it == 'sample_id' || it.startsWith('RANKSTAT_') || it.startsWith('CORRELATION_')
+        it == 'sample_id' || it.startsWith('CONTRAST_') || it.startsWith('VARIABLE_')
     }
 
     // Build header
-    def header = keep_columns.collect { it == 'sample_id' ? 'SAMPLE-ID' : it }.join('\t')
+    def header = keep_columns.collect { it == 'sample_id' ? 'SAMPLE_ID' : it }.join('\t')
 
     // Build body rows
     def rows_str = mapping_rows.collect { row -> 

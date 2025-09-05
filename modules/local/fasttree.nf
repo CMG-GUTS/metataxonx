@@ -21,13 +21,15 @@ process FASTTREE {
 
     qiime tools export \\
         --input-path rooted-tree.qza  \\
-		--output-path ./
+        --output-path ./
 
-	mv tree.nwk rooted_tree.newick
+    mv tree.nwk rooted_tree.newick
 
-    cat <<-END_VERSIONS > versions.yml
+    qiime_version=\$(qiime --version | head -1 | sed -E 's/.*version ([0-9]+\\.[0-9]+\\.[0-9]+).*/\\1/')
+
+    cat <<END_VERSIONS > versions.yml
     "${task.process}":
-        qiime: \$(qiime --version)
+        qiime: \$qiime_version
     END_VERSIONS
     """
 

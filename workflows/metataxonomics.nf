@@ -3,6 +3,7 @@
     IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+include { save_output } from '../lib/utils.groovy'
 
 include { CHECK_INPUT } from '../subworkflows/local/check_input.nf'
 include { PREPROCESSING } from '../subworkflows/local/preprocessing.nf'
@@ -18,7 +19,7 @@ include { REPORT } from '../subworkflows/local/report.nf'
 */
 
 workflow METATAXONOMICS {
-    
+
     CHECK_INPUT ()
 
     if (params.input || params.reads) {
@@ -31,12 +32,9 @@ workflow METATAXONOMICS {
         // Save output that cannot be bypassed
         if (params.save_merged_reads) save_output(PREPROCESSING.out.merged, "preprocessing/merged")
         if (params.save_sampled_reads) save_output(PREPROCESSING.out.subsampled_reads, "preprocessing/subsampled")
-        if (params.save_multiqc_reports) {
-            save_output(PREPROCESSING.out.multiqc_report, "preprocessing/multiqc")
-            save_output(PREPROCESSING.out.read_stats, "preprocessing/multiqc")
-        }
 
         DENOISE( PREPROCESSING.out.subsampled_reads )
+
         if (params.save_denoise_stats) {
             save_output(DENOISE.out.denoise_stats, "denoise/stats")
             save_output(DENOISE.out.dada2_errors, "denoise/errors")
@@ -49,6 +47,7 @@ workflow METATAXONOMICS {
             DENOISE.out.sequences,
             CHECK_INPUT.out.classifier
         )
+
         if (params.save_biom_files) {
             save_output(TAXONOMY.out.biom_without_taxonomy, "taxonomy/biom")
             save_output(TAXONOMY.out.biom_with_taxonomy, "taxonomy/biom")
@@ -86,15 +85,24 @@ workflow METATAXONOMICS {
             }
         }
 
+        ch_versions = PREPROCESSING.out.versions
+            .mix(DENOISE.out.versions)
+            .mix(TAXONOMY.out.versions)
+            .mix(DIVERSITY_ANALYSIS.out.versions)
+            .collect()
+
+        ch_multiqc_files = PREPROCESSING.out.multiqc_files
+            .mix(DENOISE.out.dada2_errors)
+            .mix(DENOISE.out.denoise_stats)
+            .collect()
+
         if (!params.bypass_report) {
             REPORT(
                 TAXONOMY.out.biom_with_taxonomy,
                 CHECK_INPUT.out.metadata,
                 DIVERSITY_ANALYSIS.out.rooted_tree_newick,
-                DIVERSITY_ANALYSIS.out.wunifrac_matrix,
-                DIVERSITY_ANALYSIS.out.alpha_div_shannon,
-                Channel.empty(),
-                DENOISE.out.dada2_errors
+                ch_multiqc_files,
+                ch_versions
             )
 
             if (params.save_biotaviz_files) {
@@ -108,25 +116,11 @@ workflow METATAXONOMICS {
                 save_output(REPORT.out.sankey_png, "sankey")
             }
 
-            if (params.save_final_report) save_output(REPORT.out.report, "omicflow")
+            if (params.save_final_reports) {
+                save_output(REPORT.out.analysis_report, "report")
+                save_output(REPORT.out.technical_report, "report")
+            }
         }        
     }
     
-}
-
-def save_output(input_ch, sub_dir_name) {
-    input_ch.map { item ->
-        def (meta, files) = (item instanceof List && item.size() == 2) ? [item[0], item[1]] : [null, item]
-        def outDir = file("${params.outdir}/${sub_dir_name}")
-        outDir.mkdir()
-
-        // files is a list
-        if (files instanceof List) {
-            files.each { inputFile ->
-               file(inputFile).copyTo(file("${outDir}/${file(inputFile).getName()}"))
-            }
-        } else {
-            file(files).copyTo(file("${outDir}/${file(files).getName()}"))
-        }
-    }
 }
