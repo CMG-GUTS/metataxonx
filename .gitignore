@@ -4,6 +4,7 @@ results/
 nextflow/
 .nextflow*
 tests/result
+cache
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
