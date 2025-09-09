@@ -1,4 +1,4 @@
-sample_id,forward_read,reverse_read,RANKSTAT_treatment,CORRELATION_BMI
+sample_id,forward_read,reverse_read,CONTRAST_treatment,BMI
 S100,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S100_R1_.fastq.gz,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S100_R2_.fastq.gz,H,23
 S103,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S103_R1_.fastq.gz,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S103_R2_.fastq.gz,T,33
 S115,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S115_R1_.fastq.gz,/home/alemg/nextflow/metataxonomics-DSL2/tests/data/S115_R2_.fastq.gz,H,22

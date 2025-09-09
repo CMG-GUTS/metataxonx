@@ -28,6 +28,11 @@ Clone the repository in a directory of your choice:
 git clone --recursive https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metataxonomics-DSL2.git
 ```
 
+In case you want to update a current git clone with all it's submodules please use
+```bash
+git submodule update --recursive --remote
+```
+
 The pipeline is containerised, meaning it can be runned via docker or singularity images. No further actions need to be performed when using the docker profile, except a docker registery needs to be set on your local system, see [docker](https://docs.docker.com/engine/install/). In case singularity is used, images are automatically cached within the project directory.
 
 ## Usage
