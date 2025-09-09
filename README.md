@@ -21,6 +21,8 @@ If you wish to use other classification methods, (pre-trained/custom) classifier
 
 **Diversity analysis**
 
+The pipeline calculates Alpha diversity metrics by the Shannon index, as obtained from the “_core-metrics-phylogenetic_” [QIIME2 diversity module](https://amplicon-docs.qiime2.org/en/latest/references/plugins/diversity.html#q2-action-diversity-core-metrics-phylogenetic), with default settings. With this same QIIME2 diversity module and script, the Beta diversity metric by (weighted) UniFrac is being computed. We currently don't support selecting other metrics, but will add this option in future updates.
+
 **Report/Visualisation**
 
 
