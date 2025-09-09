@@ -39,12 +39,12 @@ top_modules:
 
 table_columns_name:
   "FastQC: Input Reads":
-    percent_duplicates: "% Dups (raw)"
-    percent_gc: "% GC (raw)"
-    avg_sequence_length: "Avg. length (raw)"
-    median_sequence_length: "Median length (raw)"
-    total_sequences: "M Seqs (raw)"
-    percent_fails: "% Fails (raw)"
+    percent_duplicates: "% Dups (input)"
+    percent_gc: "% GC (input)"
+    avg_sequence_length: "Avg. length (input)"
+    median_sequence_length: "Median length (input)"
+    total_sequences: "M Seqs (input)"
+    percent_fails: "% Fails (input)"
   "FastQC: Trimmed Reads":
     percent_duplicates: "% Dups (trim)"
     percent_gc: "% GC (trim)"
@@ -78,6 +78,10 @@ custom_data:
         - filtered
         - denoised
         - nonchim
+        - input [%]
+        - filtered [%]
+        - denoised [%]
+        - nonchim [%]
   dada2_profiles:
     file_format: "png"
     parent_id: dada2_stats
