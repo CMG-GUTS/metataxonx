@@ -3,14 +3,14 @@
     IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-include { save_output } from '../lib/utils.groovy'
+include { save_output } from        '../lib/utils.groovy'
 
-include { CHECK_INPUT } from '../subworkflows/local/check_input.nf'
-include { PREPROCESSING } from '../subworkflows/local/preprocessing.nf'
-include { DENOISE } from '../subworkflows/local/denoise.nf'
-include { TAXONOMY } from '../subworkflows/local/taxonomy.nf'
+include { CHECK_INPUT } from        '../subworkflows/local/check_input.nf'
+include { PREPROCESSING } from      '../subworkflows/local/preprocessing.nf'
+include { DENOISE } from            '../subworkflows/local/denoise.nf'
+include { TAXONOMY } from           '../subworkflows/local/taxonomy.nf'
 include { DIVERSITY_ANALYSIS } from '../subworkflows/local/diversity_analysis.nf'
-include { REPORT } from '../subworkflows/local/report.nf'
+include { REPORT } from             '../subworkflows/local/report.nf'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
