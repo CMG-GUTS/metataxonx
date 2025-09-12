@@ -22,11 +22,18 @@ workflow METATAXONOMICS {
 
     CHECK_INPUT ()
 
+    // Initate empty channels
+    ch_versions = Channel.empty()
+    ch_multiqc_files = Channel.empty()
+    ch_newick_tree = Channel.empty()
+
     if (params.input || params.reads) {
 
         PREPROCESSING(
             CHECK_INPUT.out.meta
         )
+        ch_versions = ch_versions.mix(PREPROCESSING.out.versions)
+        ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING.out.multiqc_files)
         
         if (params.save_trim_reads & !params.bypass_trim) save_output(PREPROCESSING.out.trimmed, "preprocessing/trimmed")
         // Save output that cannot be bypassed
@@ -34,6 +41,9 @@ workflow METATAXONOMICS {
         if (params.save_sampled_reads) save_output(PREPROCESSING.out.subsampled_reads, "preprocessing/subsampled")
 
         DENOISE( PREPROCESSING.out.subsampled_reads )
+        ch_versions = ch_versions.mix(DENOISE.out.versions)
+        ch_multiqc_files = ch_multiqc_files.mix(DENOISE.out.dada2_errors)
+        ch_multiqc_files = ch_multiqc_files.mix(DENOISE.out.denoise_stats)
 
         if (params.save_denoise_stats) {
             save_output(DENOISE.out.denoise_stats, "denoise/stats")
@@ -47,6 +57,7 @@ workflow METATAXONOMICS {
             DENOISE.out.sequences,
             CHECK_INPUT.out.classifier
         )
+        ch_versions = ch_versions.mix(TAXONOMY.out.versions)
 
         if (params.save_biom_files) {
             save_output(TAXONOMY.out.biom_without_taxonomy, "taxonomy/biom")
@@ -60,6 +71,8 @@ workflow METATAXONOMICS {
                 TAXONOMY.out.biom_without_taxonomy,
                 TAXONOMY.out.qiime_asv_table
             )
+            ch_versions = ch_versions.mix(DIVERSITY_ANALYSIS.out.versions)
+            ch_newick_tree = DIVERSITY_ANALYSIS.out.rooted_tree_newick
 
             if (params.save_alpha_div_files) {
                 save_output(DIVERSITY_ANALYSIS.out.alpha_div_metrics, "alpha_diversity/metrics")
@@ -85,22 +98,11 @@ workflow METATAXONOMICS {
             }
         }
 
-        ch_versions = PREPROCESSING.out.versions
-            .mix(DENOISE.out.versions)
-            .mix(TAXONOMY.out.versions)
-            .mix(DIVERSITY_ANALYSIS.out.versions)
-            .collect()
-
-        ch_multiqc_files = PREPROCESSING.out.multiqc_files
-            .mix(DENOISE.out.dada2_errors)
-            .mix(DENOISE.out.denoise_stats)
-            .collect()
-
         if (!params.bypass_report) {
             REPORT(
                 TAXONOMY.out.biom_with_taxonomy,
                 CHECK_INPUT.out.metadata,
-                DIVERSITY_ANALYSIS.out.rooted_tree_newick,
+                ch_newick_tree,
                 ch_multiqc_files,
                 ch_versions
             )

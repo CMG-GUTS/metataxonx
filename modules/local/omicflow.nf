@@ -11,11 +11,12 @@ process OMICFLOW {
     path "versions.yml"             , emit: versions
 
     script:
+    def tree = rooted_tree_newick ? "--tree ${rooted_tree_newick}" : ''
     """
     autoflow \\
         --metadata ${metadata_clean} \\
         --biom ${biom_taxonomy} \\
-        --tree ${rooted_tree_newick} \\
+        --tree ${tree} \\
         --cpus ${task.cpus} \\
         --threads ${task.cpus}
 
