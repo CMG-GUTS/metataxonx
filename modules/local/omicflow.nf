@@ -16,7 +16,7 @@ process OMICFLOW {
     autoflow \\
         --metadata ${metadata_clean} \\
         --biom ${biom_taxonomy} \\
-        --tree ${tree} \\
+        ${tree} \\
         --cpus ${task.cpus} \\
         --threads ${task.cpus}
 
