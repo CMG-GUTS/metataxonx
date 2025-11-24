@@ -22,6 +22,7 @@ process DADA2 {
         --cpus ${task.cpus} \\
         ${novaseq} \\
         ${denoise} \\
+        ${args} \\
         > dada_report.txt
     
     cat <<-END_VERSIONS > versions.yml
