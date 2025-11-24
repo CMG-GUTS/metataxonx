@@ -97,14 +97,6 @@ custom_data:
       headers:
         - Parameter
         - Value
-  versions:
-    file_format: "tsv"
-    section_name: "Pipeline software versions"
-    plot_type: "table"
-    pconfig:
-      headers:
-        - Software
-        - Version
 
 sp:
   dada2_stats:
@@ -113,5 +105,3 @@ sp:
     fn: "errProfile_1_mqc.png"
   pipeline_parameters:
     fn: "pipeline_params.tsv"
-  versions:
-    fn: "software_versions.tsv"

@@ -4,13 +4,12 @@
 
 */
 
-include { CREATE_ANALYSIS_MAPPING } from '../../modules/local/create_analysis_mapping.nf'
-include { BIOTAVIZ } from '../../modules/local/biotaviz.nf'
-include { SANKEYPLOTS } from '../../modules/local/sankeyplots.nf'
-include { MULTIQC } from '../../modules/local/multiqc.nf'
-include { OMICFLOW } from '../../modules/local/omicflow.nf'
-
-import org.yaml.snakeyaml.Yaml
+include { CREATE_ANALYSIS_MAPPING } from        '../../modules/local/create_analysis_mapping.nf'
+include { BIOTAVIZ } from                       '../../modules/local/biotaviz.nf'
+include { SANKEYPLOTS } from                    '../../modules/local/sankeyplots.nf'
+include { MULTIQC } from                        '../../modules/local/multiqc.nf'
+include { OMICFLOW } from                       '../../modules/local/omicflow.nf'
+include { softwareVersionsToYAML } from         '../../subworkflows/nf-core/nf_pipeline_utils.nf'
 
 workflow REPORT {
     take:
@@ -48,23 +47,20 @@ workflow REPORT {
         sankeplots_ch = Channel.empty()
     }
 
-    // Combine all versions
-    ch_versions_parsed = ch_versions.collect().map { fileList ->
-        def all_versions = []
-        fileList.each { filePath ->
-            File f = filePath.toFile()
-            if (f.exists()) {
-                def versions = new Yaml().load(f.text)
-                all_versions += versions
-            }
-        }
-        return all_versions.unique()
-    }
+    // Create software versions yaml file
+    softwareVersionsToYAML(ch_versions)
+        .collectFile(
+            storeDir: "${params.outdir}/pipeline_info",
+            name: 'metataxonx_software_' + 'mqc_' + 'versions.yml',
+            sort: true,
+            newLine: true
+        ).set { ch_collated_versions }
+    ch_multiqc_files = ch_multiqc_files.mix(ch_collated_versions)
+
 
     MULTIQC(
-        ch_multiqc_files,
+        ch_multiqc_files.collect(),
         params.multiqc_config,
-        ch_versions_parsed,
         [], [], [], []
     )
 

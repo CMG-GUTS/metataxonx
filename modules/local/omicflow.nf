@@ -11,13 +11,29 @@ process OMICFLOW {
     path "versions.yml"             , emit: versions
 
     script:
+    def tree = rooted_tree_newick ? ",treeData = '${rooted_tree_newick}'" : ''
     """
-    autoflow \\
-        --metadata ${metadata_clean} \\
-        --biom ${biom_taxonomy} \\
-        --tree ${rooted_tree_newick} \\
-        --cpus ${task.cpus} \\
-        --threads ${task.cpus}
+    cat << 'EOF' > omicflow.R
+    library('OmicFlow')
+    library('ggplot2')
+
+    set.seed(999)
+    data.table::setDTthreads(${task.cpus})
+    taxa <- metagenomics\$new(
+        metaData = "${metadata_clean}",
+        biomData = "${biom_taxonomy}"
+        ${tree}
+    )
+
+    taxa\$feature_subset(Kingdom == "Bacteria")
+    taxa\$normalize()
+    taxa\$autoFlow(
+        normalize = FALSE,
+        threads = ${task.cpus}
+    )
+    EOF
+
+    Rscript omicflow.R
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
