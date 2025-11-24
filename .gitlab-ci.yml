@@ -13,7 +13,7 @@ build:
     paths:
       - ~/.cache/pip/
   rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
       when: always
   tags:
     - docker-linux
