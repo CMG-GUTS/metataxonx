@@ -3,7 +3,7 @@ stages:
 
 build:
   stage: build
-  image: openjdk:17-jdk-slim
+  image: openjdk:17-slim
   script:
     - apt-get update && apt-get install -y curl
     - curl -s https://get.nextflow.io | bash
