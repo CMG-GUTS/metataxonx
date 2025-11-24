@@ -3,9 +3,11 @@ stages:
 
 build:
   stage: build
-  image: openjdk:17-slim
+  image: ubuntu:22.04
+  variables:
+    JAVA_VERSION: 17
   script:
-    - apt-get update && apt-get install -y curl
+    - apt-get update && apt-get install -y openjdk-${JAVA_VERSION}-jdk curl python3-pip
     - curl -s https://get.nextflow.io | bash
     - mv nextflow /usr/local/bin/
     - nextflow -version
