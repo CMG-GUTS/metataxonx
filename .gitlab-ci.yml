@@ -4,7 +4,7 @@ stages:
 build:
   stage: build
   image: openjdk:17-jdk-slim
-  before_script:
+  script:
     - apt-get update && apt-get install -y curl
     - curl -s https://get.nextflow.io | bash
     - mv nextflow /usr/local/bin/
