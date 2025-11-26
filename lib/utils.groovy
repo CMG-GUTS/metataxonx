@@ -4,7 +4,8 @@ def save_output(input_ch, sub_dir_name) {
         def outDir = file("${params.outdir}/${sub_dir_name}")
         outDir.mkdir()
 
-        // files is a list
+        if (files == null) return
+
         if (files instanceof List) {
             files.each { inputFile ->
                file(inputFile).copyTo(file("${outDir}/${file(inputFile).getName()}"))
@@ -44,4 +45,12 @@ def samplesheetToMetadata(input) {
     }
 
     return [rows]
+}
+
+def ensureDir(String dirPath) {
+    def dir = file(dirPath)
+    if (!dir.exists()) {
+        dir.mkdirs()
+    }
+    return Channel.fromPath(dirPath)
 }
