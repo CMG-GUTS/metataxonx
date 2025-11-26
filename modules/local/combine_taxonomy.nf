@@ -27,15 +27,13 @@ process COMBINE_TAXONOMY {
     ' versions.yml
     """
 
-    
-
     stub:
     """
     touch biom_with_taxonomy.biom
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        biom: \$(biom --version)
+        biom: stub-version
     END_VERSIONS
     """
 }

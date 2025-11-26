@@ -44,13 +44,7 @@ workflow CHECK_INPUT {
         meta_ch = Channel.empty()
     }
 
-    classifier_ch = Channel
-        .fromPath(params.classifier)
-        .ifEmpty { exit 1, 'Cannot find file: ${params.classifier}\n'}
-
-
     emit:
     meta        = meta_ch
     metadata    = metadata_ch
-    classifier  = classifier_ch
 }

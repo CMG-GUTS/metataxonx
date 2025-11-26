@@ -11,6 +11,10 @@ process FASTTREE {
 
     script:
     """
+    export XDG_CONFIG_HOME="./xdgconfig"
+    export MPLCONFIGDIR="./mplconfigdir"
+    export NUMBA_CACHE_DIR="./numbacache"
+
     qiime phylogeny align-to-tree-mafft-fasttree \\
         --i-sequences ${sequences} \\
         --o-alignment aligned-rep-seqs.qza \\
@@ -21,9 +25,9 @@ process FASTTREE {
 
     qiime tools export \\
         --input-path rooted-tree.qza  \\
-        --output-path ./
+        --output-path phylogenetic_tree
 
-    mv tree.nwk rooted_tree.newick
+    mv phylogenetic_tree/tree.nwk rooted_tree.newick
 
     qiime_version=\$(qiime --version | head -1 | sed -E 's/.*version ([0-9]+\\.[0-9]+\\.[0-9]+).*/\\1/')
 
@@ -40,7 +44,7 @@ process FASTTREE {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        qiime: \$(qiime --version)
+        qiime: stub-version
     END_VERSIONS
     """
 }

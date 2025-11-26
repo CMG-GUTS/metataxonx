@@ -54,7 +54,7 @@ process CUTADAPT {
     """
 
     stub:
-    def prefix  = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     def trimmed = meta.single_end ? "${prefix}.trim.fastq.gz" : "${prefix}_1.trim.fastq.gz ${prefix}_2.trim.fastq.gz"
     """
     touch ${prefix}.cutadapt.log
@@ -62,7 +62,7 @@ process CUTADAPT {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        cutadapt: \$(cutadapt --version)
+        cutadapt: stub-version
     END_VERSIONS
     """
 }

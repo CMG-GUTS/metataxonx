@@ -46,7 +46,7 @@ process BIOTAVIZ {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        python: \$(python3.11 --version)
+        python: stub-version
     END_VERSIONS
     """
 }

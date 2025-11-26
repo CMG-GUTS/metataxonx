@@ -6,8 +6,8 @@ process SEQKIT_SAMPLE {
     tuple val(meta), path(reads)
 
     output:
-    tuple val(meta), path("*.fastq.gz"), emit: reads
-    path "versions.yml"                , emit: versions
+    tuple val(meta), path("*.subsampled.fastq.gz") , emit: reads
+    path "versions.yml"                            , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -32,9 +32,8 @@ process SEQKIT_SAMPLE {
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
-
     """
-    echo "" | gzip > ${prefix}.fastq.gz
+    touch ${prefix}.subsampled.fastq.gz
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

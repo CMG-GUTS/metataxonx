@@ -7,29 +7,25 @@ process QIIME_IMPORT_EXPORT {
     path(rep_seqs_fasta)
 
     output:
-    // path('representative_sequences.fasta'), emit: sequences_fasta
-    path "table.qza"                        , emit: asv_qza
-    path "asv_table_no_taxonomy.biom"       , emit: biom_no_taxonomy
+    path "asvs_without_taxonomy.qza"        , emit: asv_qza
+    path "asvs_without_taxonomy.biom"       , emit: biom_no_taxonomy
     path "rep-seqs.qza"                     , emit: repseqs_qza
     path "versions.yml"                     , emit: versions
 
     script:
     """
+    export MPLCONFIGDIR="./mplconfigdir"
+    export NUMBA_CACHE_DIR="./numbacache"
+
     # Converts phyloseq biom to qiime compatible biom file
-    biom convert -i ${seq_table} -o table.biom --to-hdf5
+    biom convert -i ${seq_table} -o asvs_without_taxonomy.biom --to-hdf5
 
     # Convert RDS files from parallel_dada2 into qiime2 formats
     qiime tools import \\
-    --input-path table.biom \\
+    --input-path asvs_without_taxonomy.biom \\
     --type 'FeatureTable[Frequency]' \\
     --input-format BIOMV210Format \\
-    --output-path table.qza    
-
-    # convert absolute (raw) count table to biom format
-    qiime tools export \\
-        --input-path table.qza \\
-        --output-path ./
-    mv feature-table.biom asv_table_no_taxonomy.biom
+    --output-path asvs_without_taxonomy.qza    
 
     # representative sequences
     qiime tools import \\
@@ -47,19 +43,18 @@ process QIIME_IMPORT_EXPORT {
     /^ *biom:/ s/(: *).*\\b([0-9]+\\.[0-9]+\\.[0-9]+)\\b.*/\\1 \\2/
     /^ *qiime:/ s/(: *).*\\b([0-9]+\\.[0-9]+\\.[0-9]+)\\b.*/\\1 \\2/
     ' versions.yml
-
     """
 
     stub:
     """
-    touch table.qza
-    touch asv_table_no_taxonomy.biom
+    touch asvs_without_taxonomy.qza
+    touch asvs_without_taxonomy.biom
     touch rep-seqs.qza
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        qiime: \$(qiime --version)
-        biom: \$(biom --version)
+        qiime: stub-version
+        biom: stub-version
     END_VERSIONS
     """
 }

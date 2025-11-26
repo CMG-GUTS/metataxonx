@@ -14,6 +14,10 @@ process BETA_RAREFACTION {
 
     script:
     """
+    export XDG_CONFIG_HOME="./xdgconfig"
+    export MPLCONFIGDIR="./mplconfigdir"
+    export NUMBA_CACHE_DIR="./numbacache"
+
     qiime diversity beta-rarefaction \\
         --i-table ${table} \\
         --i-phylogeny ${tree} \\
@@ -46,7 +50,7 @@ process BETA_RAREFACTION {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        qiime: \$(qiime --version)
+        qiime: stub-version
     END_VERSIONS
     """
 }

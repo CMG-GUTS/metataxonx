@@ -75,7 +75,10 @@ Data Input Options:
                                     Available: docker, singularity
 
     Key Pipeline Options:
-        --classifier                Path to qiime2 classifier
+        --read_merger_tool          Paired-end Merger tool to use (default: flash)
+        --classifier_name           Name of classifier to be downloaded ('standard', 'diverse', 'human-stool', 'greengenes', default: 'standard')
+        --classifier_path           Path to save and download the classifier (default: $projectDir/classifiers)
+        --classifier_custom         Path to a custom classifier compatible to sklearn version 1.4.0 (default: null)
         --standard_adapters         Path to a collection of adapter sequences (default: $projectDir/assets/adapters.fasta)
         --standard_primers          Path to a collection of primer sequences (default: $projectDir/assets/primers.fasta)
         --custom_primer_1           Custom primer sequence forward (default: none)
@@ -83,34 +86,40 @@ Data Input Options:
         --custom_adapter_1          Custom adapter sequence forward (default: none)
         --custom_adapter_2          Custom adapter sequence reverse (default: none)
 
-     Sample read depth settings
-        --batch_size                Size of batches in case many samples are supplied (default: 500)
-        --read_sample_size          Minimum number of reads within a single sample (default: 100.000)
+    Software non-default settings
+        --multiqc_config            Path to custom multiqc yaml file (default: '$projectDir/assets/multiqc_config.yaml')
+        --seqkit_opt                Seqkit sub-sampling options (default: '-s100 -n 100000')
+        --pear_opt                  Paired-end Read Merger (PEAR) options (default: '-y 25G -j 32 -q 30 -v 35 -p 0.0001')
+        --flash_opt                 FLASH paired-end read merger options (default: '--min-overlap 10 --max-mismatch-densit 0.2')
+        --cutadapt_opt              Cutadapt Read Trimming options (default: '--discard-untrimmed --minimum-length 20')
+        --dada2_opt                 DADA2 Denoising options (default: '--p-trunc-q 2 --p-max-ee 6 --p-min-fold-parent-over-abundance 2 --p-chimera-method consensus --batch 500')
         --novaseq                   DADA2 NovaSeq denoising (default: false)
         --root_taxon                Biotaviz feature subset (default: 'domain - Bacteria')
 
     Process Bypass Options:
         --bypass_trim               Skip read trimming (default: false)
+        --bypass_denoise            Skip DADA2 denoising (default: false)
+        --bypass_post_analysis      Skip Alpha and Beta diversity analysis (default: false)
+        --bypass_report             Skip MultiQC and OmicFlow reports (default: false)
 
     File Saving Options:
         --save_trim_reads           Save trimmed reads (default: false)
-        --save_multiqc_reports      Save MultiQC reports (default: true)
         --save_sampled_reads        Save interleaved reads (default: false)
-        --save_merged_reads         Save paired-end merged reads (default: false)
+        --save_merged_reads         Save paired-end merged reads (default: true)
 
-        --save_denoise_stats        Save DADA2 denoising stats (default: false)
-        --save_denoise_sequences    Save representative sequences (default: false)
-        --save_denoise_table        Save abundance table (default: false)
+        --save_denoise_stats        Save DADA2 denoising stats (default: true)
+        --save_denoise_sequences    Save representative sequences (default: true)
+        --save_denoise_table        Save abundance table (default: true)
 
-        --save_biom_files           Save BIOM format file (default: false)
-        --save_tree_files           Save NEWICK format tree from fasttree (default: false)
-        --save_alpha_div_files      Save alpha diversity metrics (default: false)
-        --save_beta_div_files       Save beta diversity metrics (default: false)
+        --save_biom_files           Save BIOM format file (default: true)
+        --save_tree_files           Save NEWICK format tree from fasttree (default: true)
+        --save_alpha_div_files      Save alpha diversity metrics (default: true)
+        --save_beta_div_files       Save beta diversity metrics (default: true)
         --save_qiime_artifacts      Save qiime2 artifacts (default: false)
 
         --save_biotaviz_files       Save BiotaViz format (default: false)
-        --save_sankey_plot          Save sankey plot of taxa (default: false)
-        --save_final_report         Save report file (default: false)
+        --save_sankey_plot          Save sankey plot of taxa (default: true)
+        --save_final_report         Save report file (default: true)
 
     Resources Options:
         --process_low_cpu           Number of cores to allocate for process with low cpu requirement (default: 4)

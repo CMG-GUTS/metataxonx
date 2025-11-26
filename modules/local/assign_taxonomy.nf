@@ -12,27 +12,24 @@ process ASSIGN_TAXONOMY {
 
      script:
      """
+    export XDG_CONFIG_HOME="./xdgconfig"
+    export MPLCONFIGDIR="./mplconfigdir"
+    export NUMBA_CACHE_DIR="./numbacache"
+
      qiime feature-classifier classify-sklearn \\
           --i-classifier ${classifier} \\
           --i-reads ${sequences} \\
           --o-classification taxonomy_sklearn.qza \\
           --p-n-jobs ${task.cpus}
 
-     qiime metadata tabulate \\
-          --m-input-file taxonomy_sklearn.qza \\
-          --o-visualization taxonomy_sklearn.qzv
-
-     qiime tools export --input-path taxonomy_sklearn.qza  \\
-          --output-path taxonomy
-
-     qiime tools export --input-path taxonomy_sklearn.qzv  \\
+     qiime tools export \\
+          --input-path taxonomy_sklearn.qza  \\
           --output-path taxonomy
 
      cat taxonomy/taxonomy.tsv | \\
      sed 's/Feature ID/#OTUID/' | \\
      sed 's/Taxon/taxonomy/' | \\
-     sed 's/Consensus/consensus/' > taxonomy/taxonomy_relabeled.tsv
-     mv taxonomy/taxonomy_relabeled.tsv ./taxonomy.tsv
+     sed 's/Consensus/consensus/' > taxonomy.tsv
 
     qiime_version=\$(qiime --version | head -1 | sed -E 's/.*version ([0-9]+\\.[0-9]+\\.[0-9]+).*/\\1/')
 
@@ -49,7 +46,7 @@ process ASSIGN_TAXONOMY {
 
      cat <<-END_VERSIONS > versions.yml
      "${task.process}":
-          qiime: \$(qiime --version)
+          qiime: stub-version
      END_VERSIONS
      """
 }

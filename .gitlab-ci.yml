@@ -1,5 +1,6 @@
 stages:
   - build
+  - test
 
 build:
   stage: build
@@ -19,3 +20,20 @@ build:
       when: always
   tags:
     - docker-linux
+
+test:
+  stage: test
+  image: openjdk:17-jdk-slim
+  script:
+    - echo "Running tests"
+    - nextflow run main.nf -profile test -stub-run
+  cache:
+    paths:
+      - ~/.cache/tmp
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: always
+  tags:
+    - docker-linux
+  needs:
+    - build

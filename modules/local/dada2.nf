@@ -18,7 +18,6 @@ process DADA2 {
     """
     Rscript $projectDir/bin/R/run-dada2-batch/parallel_dada2.R \\
         --metadata ${mapping} \\
-        --batch_n ${params.batch_size} \\
         --cpus ${task.cpus} \\
         ${novaseq} \\
         ${denoise} \\
@@ -58,8 +57,8 @@ process DADA2 {
  
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        R: \$(R --version)
-        dada2: \$(Rscript -e 'cat(as.character(packageVersion("dada2")))')
+        R: stub-version
+        dada2: stub-version
     END_VERSIONS
     """
 }

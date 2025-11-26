@@ -10,6 +10,9 @@ process MERGE_ALPHA_DIVERSITY {
 
     script:
     """
+    export MPLCONFIGDIR="./mplconfigdir"
+    export NUMBA_CACHE_DIR="./numbacache"
+
     qiime metadata tabulate \\
         --m-input-file *vector.qza \\
         --o-visualization combined-alpha-metadata.qzv
@@ -34,7 +37,7 @@ process MERGE_ALPHA_DIVERSITY {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        qiime: \$(qiime --version)
+        qiime: stub-version
     END_VERSIONS
     """
 }

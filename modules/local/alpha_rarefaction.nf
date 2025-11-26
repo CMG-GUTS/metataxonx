@@ -14,6 +14,10 @@ process ALPHA_RAREFACTION {
 
     script:
     """
+    export XDG_CONFIG_HOME="./xdgconfig"
+    export MPLCONFIGDIR="./mplconfigdir"
+    export NUMBA_CACHE_DIR="./numbacache"
+
     qiime diversity alpha-rarefaction \\
         --i-table ${table} \\
         --i-phylogeny ${phylogeny} \\
@@ -22,7 +26,7 @@ process ALPHA_RAREFACTION {
 
     qiime tools export \\
         --input-path alpha_rarefaction.qzv \\
-    --output-path alpha_rarefaction
+        --output-path alpha_rarefaction
 
     qiime_version=\$(qiime --version | head -1 | sed -E 's/.*version ([0-9]+\\.[0-9]+\\.[0-9]+).*/\\1/')
 
@@ -40,7 +44,7 @@ process ALPHA_RAREFACTION {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        qiime: \$(qiime --version)
+        qiime: stub-version
     END_VERSIONS
     """
 }

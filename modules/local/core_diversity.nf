@@ -15,6 +15,10 @@ process CORE_DIVERSITY {
     
     script:
     """
+    export XDG_CONFIG_HOME="./xdgconfig"
+    export MPLCONFIGDIR="./mplconfigdir"
+    export NUMBA_CACHE_DIR="./numbacache"
+    
     qiime diversity core-metrics-phylogenetic \\
         --m-metadata-file ${metadata} \\
         --i-phylogeny ${tree} \\
@@ -48,7 +52,7 @@ process CORE_DIVERSITY {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        qiime: \$(qiime --version)
+        qiime: stub-version
     END_VERSIONS
     """
 }

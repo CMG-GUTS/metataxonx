@@ -6,6 +6,7 @@
 include { save_output } from        '../lib/utils.groovy'
 
 include { CHECK_INPUT } from        '../subworkflows/local/check_input.nf'
+include { CONFIGURE } from          '../subworkflows/local/configure.nf'
 include { PREPROCESSING } from      '../subworkflows/local/preprocessing.nf'
 include { DENOISE } from            '../subworkflows/local/denoise.nf'
 include { TAXONOMY } from           '../subworkflows/local/taxonomy.nf'
@@ -20,7 +21,11 @@ include { REPORT } from             '../subworkflows/local/report.nf'
 
 workflow METATAXONOMICS {
 
+    // Formats reads and input into the right meta channel
     CHECK_INPUT ()
+
+    // Checks or downloads classifiers
+    CONFIGURE ()
 
     // Initate empty channels
     ch_versions = Channel.empty()
@@ -32,15 +37,16 @@ workflow METATAXONOMICS {
         PREPROCESSING(
             CHECK_INPUT.out.meta
         )
+
         ch_versions = ch_versions.mix(PREPROCESSING.out.versions)
         ch_multiqc_files = ch_multiqc_files.mix(PREPROCESSING.out.multiqc_files)
-        
+
         if (params.save_trim_reads & !params.bypass_trim) save_output(PREPROCESSING.out.trimmed, "preprocessing/trimmed")
         // Save output that cannot be bypassed
         if (params.save_merged_reads) save_output(PREPROCESSING.out.merged, "preprocessing/merged")
-        if (params.save_sampled_reads) save_output(PREPROCESSING.out.subsampled_reads, "preprocessing/subsampled")
+        if (params.save_sampled_reads) save_output(PREPROCESSING.out.subsampled, "preprocessing/subsampled")
 
-        DENOISE( PREPROCESSING.out.subsampled_reads )
+        DENOISE( PREPROCESSING.out.subsampled )
         ch_versions = ch_versions.mix(DENOISE.out.versions)
         ch_multiqc_files = ch_multiqc_files.mix(DENOISE.out.dada2_errors)
         ch_multiqc_files = ch_multiqc_files.mix(DENOISE.out.denoise_stats)
@@ -55,7 +61,7 @@ workflow METATAXONOMICS {
         TAXONOMY(
             DENOISE.out.counts_table,
             DENOISE.out.sequences,
-            CHECK_INPUT.out.classifier
+            CONFIGURE.out.classifier
         )
         ch_versions = ch_versions.mix(TAXONOMY.out.versions)
 

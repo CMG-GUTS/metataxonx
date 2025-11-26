@@ -6,10 +6,11 @@
 include { CUTADAPT } from '../../modules/nf-core/cutadapt.nf'
 include { SEQKIT_SAMPLE } from '../../modules/nf-core/seqkit/sample.nf'
 include { PEAR } from '../../modules/nf-core/pear.nf'
+include { FLASH } from '../../modules/nf-core/flash.nf'
 
 include { FASTQC as FASTQC_reads } from '../../modules/nf-core/fastqc.nf'
 include { FASTQC as FASTQC_trim } from '../../modules/nf-core/fastqc.nf'
-include { FASTQC as FASTQC_pear } from '../../modules/nf-core/fastqc.nf'
+include { FASTQC as FASTQC_merged } from '../../modules/nf-core/fastqc.nf'
 
 workflow PREPROCESSING {
     take:
@@ -38,13 +39,23 @@ workflow PREPROCESSING {
     }
 
     if (!params.singleEnd) {
-        PEAR(
-            ch_trimmed_reads
-        ).assembled.set { ch_merged_reads }
-        ch_versions = ch_versions.mix(PEAR.out.versions)
+        if (params.read_merger_tool == "pear") {
+            PEAR(
+                ch_trimmed_reads
+            ).assembled.set { ch_merged_reads }
+            ch_versions = ch_versions.mix(PEAR.out.versions)
+        }
+        
+        if (params.read_merger_tool == "flash") {
+            FLASH(
+                ch_trimmed_reads
+            ).merged.set { ch_merged_reads }
+            ch_versions = ch_versions.mix(FLASH.out.versions)
+            ch_multiqc_files = ch_multiqc_files.mix(FLASH.out.histogram.collect{ it[1] })
+        }
 
-        FASTQC_pear(ch_merged_reads, "pear")
-        ch_multiqc_files = ch_multiqc_files.mix(FASTQC_pear.out.zip.collect{ it[1] })
+        FASTQC_merged(ch_merged_reads, params.read_merger_tool)
+        ch_multiqc_files = ch_multiqc_files.mix(FASTQC_merged.out.zip.collect{ it[1] })
 
     } else {
         ch_merged_reads = ch_trimmed_reads
@@ -58,7 +69,7 @@ workflow PREPROCESSING {
     untrimmed           = reads
     trimmed             = ch_trimmed_reads
     merged              = ch_merged_reads
-    subsampled_reads    = ch_subsampled_reads
+    subsampled          = ch_subsampled_reads
     multiqc_files       = ch_multiqc_files
     versions            = ch_versions
 }

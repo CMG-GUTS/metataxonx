@@ -43,8 +43,8 @@ process SANKEYPLOTS {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        R: \$(R --version)
-        python: \$(python3.11 --version)
+        R: stub-version
+        python: stub-version
     END_VERSIONS
     """
 }

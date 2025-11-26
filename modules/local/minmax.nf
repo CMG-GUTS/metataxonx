@@ -34,8 +34,8 @@ process MINMAX {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        python: \$(python3.11 --version)
-        biom: \$(biom --version)
+        python: stub-version
+        biom: stub-version
     END_VERSIONS
     """
 }
