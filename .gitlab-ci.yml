@@ -1,9 +1,8 @@
 stages:
-  - build
-  - test
+  - stub_run
 
-build:
-  stage: build
+stub_run:
+  stage: stub_run
   image: ubuntu:22.04
   variables:
     JAVA_VERSION: 17
@@ -11,34 +10,12 @@ build:
     - apt-get update && apt-get install -y openjdk-${JAVA_VERSION}-jdk curl python3-pip
     - curl -s https://get.nextflow.io | bash
     - mv nextflow /usr/local/bin/
-    - nextflow -version
-  cache:
-    paths:
-      - ~/.cache/pip/
-  artifacts:
-    paths:
-      - /usr/local/bin/nextflow
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-      when: always
-  tags:
-    - docker-linux
-
-test:
-  stage: test
-  image: ubuntu:22.04
-  variables:
-    JAVA_VERSION: 17
-  script:
-    - echo "Running tests"
     - nextflow run main.nf -profile test -stub-run
   cache:
     paths:
-      - ~/.cache/tmp
+      - ~/.cache/pip/
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
       when: always
   tags:
     - docker-linux
-  needs:
-    - job: build
