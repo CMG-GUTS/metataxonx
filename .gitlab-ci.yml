@@ -23,7 +23,9 @@ build:
 
 test:
   stage: test
-  image: openjdk:17-jdk-slim
+  image: ubuntu:22.04
+  variables:
+    JAVA_VERSION: 17
   script:
     - echo "Running tests"
     - nextflow run main.nf -profile test -stub-run
