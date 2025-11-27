@@ -17,11 +17,6 @@ process CLASSIFIER_DOWNLOAD {
     """
     set -e
 
-    if [ -f "${FILE}" ]; then
-        echo "File ${FILE} already exists, skipping download."
-        exit 0
-    fi
-
     # Define URLs and expected SHA256 sums for known db_name values
     case "${db_name}" in
         "standard")
@@ -45,6 +40,17 @@ process CLASSIFIER_DOWNLOAD {
             exit 1
             ;;
     esac
+
+    if [ -f "${FILE}" ]; then
+        SHA256_ACTUAL=\$(sha256sum ${FILE} | cut -d ' ' -f1)
+        if [ "\$SHA256_ACTUAL" == "\$SHA256_EXPECTED" ]; then
+            echo "Expected: \$SHA256_EXPECTED"
+            echo "Actual  : \$SHA256_ACTUAL"
+            echo "File ${FILE} already exists, skipping download."
+            exit 0
+        fi
+        echo "File ${FILE} doesn't exist, starting download."
+    fi
 
     # Download the classifier file into db_dir
     mkdir -p ${db_dir}
