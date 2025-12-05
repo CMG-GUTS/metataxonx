@@ -16,7 +16,7 @@ process DADA2 {
     def novaseq = params.novaseq ? '--novaseq' : ''
     def denoise = params.bypass_denoise ? '--skip-denoise' : ''
     """
-    Rscript $projectDir/bin/R/run-dada2-batch/parallel_dada2.R \\
+    parallel_dada2 \\
         --metadata ${mapping} \\
         --cpus ${task.cpus} \\
         ${novaseq} \\
