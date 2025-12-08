@@ -35,14 +35,10 @@ process QIIME_IMPORT_EXPORT {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        qiime: \$(qiime --version | head -1)
-        biom: \$(biom --version | head -1)
+        qiime: \$(qiime --version | head -1 | sed -e "s/q2cli version //g")
+        biom: \$(biom --version | sed -e "s/biom, version //g")
     END_VERSIONS
 
-    sed -i.bak -E '
-    /^ *biom:/ s/(: *).*\\b([0-9]+\\.[0-9]+\\.[0-9]+)\\b.*/\\1 \\2/
-    /^ *qiime:/ s/(: *).*\\b([0-9]+\\.[0-9]+\\.[0-9]+)\\b.*/\\1 \\2/
-    ' versions.yml
     """
 
     stub:

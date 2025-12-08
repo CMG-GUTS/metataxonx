@@ -24,16 +24,9 @@ process SANKEYPLOTS {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        R: \$(R --version | head -1)
-        python: \$(python3.11 --version)
+        R: \$(R --version | head -1 | cut -d ' ' -f3)
+        python: \$(python3.11 --version 2>&1 | sed -e "s/Python //g")
     END_VERSIONS
-
-    # Rewrite the R version
-    sed -i.bak -E '
-    /^ *R:/ s/(: *).*\\b([0-9]+\\.[0-9]+\\.[0-9]+)\\b.*/\\1 \\2/
-    /^ *python:/ s/(: *).*\\b([0-9]+\\.[0-9]+\\.[0-9]+)\\b.*/\\1 \\2/
-    ' versions.yml
-
     """
 
     stub:

@@ -29,11 +29,9 @@ process FASTTREE {
 
     mv phylogenetic_tree/tree.nwk rooted_tree.newick
 
-    qiime_version=\$(qiime --version | head -1 | sed -E 's/.*version ([0-9]+\\.[0-9]+\\.[0-9]+).*/\\1/')
-
     cat <<END_VERSIONS > versions.yml
     "${task.process}":
-        qiime: \$qiime_version
+        qiime: \$(qiime --version | head -1 | sed -e "s/q2cli version //g")
     END_VERSIONS
     """
 
