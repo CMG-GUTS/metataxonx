@@ -19,7 +19,7 @@ include { REPORT } from             '../subworkflows/local/report.nf'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-workflow METATAXONOMICS {
+workflow METATAXONX {
 
     // Formats reads and input into the right meta channel
     CHECK_INPUT ()

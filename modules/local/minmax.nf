@@ -2,7 +2,7 @@ process MINMAX {
     label 'process_single'
 
     input:
-    path(featuretable)
+    path biom_file
 
     output:
     path "maxcount.txt"     , emit: maxcount
@@ -11,20 +11,24 @@ process MINMAX {
 
     script:
     """
-    biom convert -i ${featuretable} -o ${featuretable}.txt --to-tsv
-    python3.11 $projectDir/bin/python/table_minmax.py ${featuretable}.txt maximum > maxcount.txt
-    python3.11 $projectDir/bin/python/table_minmax.py ${featuretable}.txt minimum > mincount.txt
+    python3.11 << 'EOF'
+
+    from biom import load_table
+
+    biom_table = load_table("${biom_file}")
+    sample_sums = biom_table.matrix_data.sum(axis=0)
+
+    with open('maxcount.txt', 'w') as max_file:
+        print(int(sample_sums.max()), file = max_file)
+
+    with open('mincount.txt', 'w') as min_file:
+        print(int(sample_sums.min()), file = min_file)
+    EOF
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        python: \$(python3.11 --version)
-        biom: \$(biom --version)
+        python: \$(python3.11 --version 2>&1 | sed -e "s/Python //g")
     END_VERSIONS
-
-    sed -i.bak -E '
-    /^ *python:/ s/(: *).*\\b([0-9]+\\.[0-9]+\\.[0-9]+)\\b.*/\\1 \\2/
-    /^ *biom:/ s/(: *).*\\b([0-9]+\\.[0-9]+\\.[0-9]+)\\b.*/\\1 \\2/
-    ' versions.yml
     """
 
     stub:
@@ -35,7 +39,6 @@ process MINMAX {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: stub-version
-        biom: stub-version
     END_VERSIONS
     """
 }

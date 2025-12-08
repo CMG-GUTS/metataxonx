@@ -11,7 +11,7 @@ nextflow.enable.dsl = 2
 IMPORT WORKFLOWS | SUBWORKFLOWS | MODULES
 =========================================================================
 */
-include { METATAXONOMICS } from './workflows/metataxonomics.nf'
+include { METATAXONX } from './workflows/metataxonx.nf'
 include { PIPELINE_INITIALISATION } from './subworkflows/local/pipeline_initialisation.nf'
 include { PIPELINE_COMPLETION } from './subworkflows/local/pipeline_initialisation.nf'
 
@@ -26,7 +26,7 @@ workflow {
         params.outdir
     )
 
-    METATAXONOMICS ()
+    METATAXONX ()
 
     PIPELINE_COMPLETION(
         params.email,
