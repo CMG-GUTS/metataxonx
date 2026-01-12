@@ -9,7 +9,7 @@
 
 The 16S pipeline is a best-practice suite for the preprocessing, denoising and annotation of sequencing data obtained via 16S rRNA marker-gene sequencing. The pipeline contains [NF-core modules](https://github.com/nf-core/modules) and other local modules that are in the similar format. It can be runned via both docker and singularity containers.
 
-![test](docs/images/metataxonx_v1_drawio.png)
+![test](docs/images/metataxonx_v1.1_drawio.png){width=90%}
 
 ## Pipeline summary
 
