@@ -115,7 +115,7 @@ Data Input Options:
         --save_tree_files           Save NEWICK format tree from fasttree (default: true)
         --save_alpha_div_files      Save alpha diversity metrics (default: true)
         --save_beta_div_files       Save beta diversity metrics (default: true)
-        --save_qiime_artifacts      Save qiime2 artifacts (default: false)
+        --save_qiime_artifacts      Save qiime2 artifacts (default: true)
 
         --save_biotaviz_files       Save BiotaViz format (default: false)
         --save_sankey_plot          Save sankey plot of taxa (default: true)

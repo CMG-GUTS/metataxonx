@@ -13,6 +13,7 @@ process BETA_RAREFACTION {
     path "versions.yml"                         , emit: versions
 
     script:
+    def args = task.ext.args ?: ''
     """
     export XDG_CONFIG_HOME="./xdgconfig"
     export MPLCONFIGDIR="./mplconfigdir"
@@ -40,6 +41,7 @@ process BETA_RAREFACTION {
     """
 
     stub:
+    def args = task.ext.args ?: ''
     """
     touch beta_rarefaction.qzv
     touch weighted_unifrac_tree.newick

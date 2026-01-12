@@ -8,11 +8,15 @@
 
 The 16S pipeline is a best-practice suite for the preprocessing, denoising and annotation of sequencing data obtained via 16S rRNA marker-gene sequencing. The pipeline contains [NF-core modules](https://github.com/nf-core/modules) and other local modules that are in the similar format. It can be runned via both docker and singularity containers.
 
+<p align="center">
+    <img src="docs/images/metataxonx_v1_drawio.png" alt="workflow" width="90%">
+</p>
+
 ## Pipeline summary
 
 The pipeline is able to perform different taxonomic annotation on either (single/paired) reads. The different subworkflows can be defined via `--bypass_<method>` flags, a full overview is shown by running `--help`.
 
-The pipeline performs preprocessing of the reads via the removal of primers or adapters via [cutadapt](https://cutadapt.readthedocs.io/en/stable/) and paired-end read merging via either [FLASH](https://www.psc.edu/resources/software/flash/) or [PEAR](https://cme.h-its.org/exelixis/web/software/pear/doc.html). Before and after each step the quality control will be assessed via [fastqc](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) and a [multiqc](https://github.com/MultiQC/MultiQC) report is created as output. The denoising of single-end reads is performed via [DADA2](https://benjjneb.github.io/dada2/) in batches or in paralell with the module [run-dada2-batch](https://github.com/agusinac/run-dada2-batch). Final lo
+The pipeline performs preprocessing of the reads via the removal of primers or adapters via [cutadapt](https://cutadapt.readthedocs.io/en/stable/) and paired-end read merging via either [FLASH](https://www.psc.edu/resources/software/flash/) or [PEAR](https://cme.h-its.org/exelixis/web/software/pear/doc.html). Before and after each step the quality control will be assessed via [fastqc](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) and a [multiqc](https://github.com/MultiQC/MultiQC) report is created as output. The denoising of single-end reads is performed via [DADA2](https://benjjneb.github.io/dada2/) in batches or in paralell with the module [run-dada2-batch](https://github.com/agusinac/run-dada2-batch).
 
 ### Taxonomy assignment
 
@@ -25,7 +29,7 @@ Specific pre-built classifiers can be assigned via `--classifier_name`, which ar
 
 ### Diversity analysis
 
-The pipeline calculates multiple Alpha diversity metrics, including the Shannon index, evenness, observed features, and Faith's phylogenetic diversity, as obtained from the [core-metrics-phylogenetic](https://docs.qiime2.org/2024.10/plugins/available/diversity/core-metrics-phylogenetic/) QIIME2 diversity module with default parameters. It also computes Beta diversity metrics including Bray-Curtis dissimilarity, Jaccard distance, as well as weighted and unweighted UniFrac distances. Moreover, the pipeline uses rarefied feature tables to ensure consistent sampling depth across samples for these calculations.
+The pipeline uses [QIIME2](https://qiime2.org/) for the construction of a phylogentic tree via [fasttree](https://docs.qiime2.org/2024.10/plugins/available/phylogeny/align-to-tree-mafft-fasttree/) and for diversity analysis, such as [alpha diversity](https://docs.qiime2.org/2024.10/plugins/available/diversity/alpha-rarefaction/) and [beta diversity](https://docs.qiime2.org/2024.10/plugins/available/diversity/beta-rarefaction/). Moreover, the pipeline uses rarefied data to ensure consistent sampling depth.
 
 ## Installation
 > [!NOTE]

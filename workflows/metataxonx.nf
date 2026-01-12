@@ -81,11 +81,11 @@ workflow METATAXONX {
             ch_newick_tree = DIVERSITY_ANALYSIS.out.rooted_tree_newick
 
             if (params.save_alpha_div_files) {
-                save_output(DIVERSITY_ANALYSIS.out.alpha_div_metrics, "alpha_diversity/metrics")
-                save_output(DIVERSITY_ANALYSIS.out.merged_alpha_div, "alpha_diversity/metrics")
+                save_output(DIVERSITY_ANALYSIS.out.alpha_div_metrics, "diversity_analysis/alpha_diversity/metrics")
+                save_output(DIVERSITY_ANALYSIS.out.merged_alpha_div, "diversity_analysis/alpha_diversity/metrics")
             }
             if (params.save_beta_div_files) {
-                save_output(DIVERSITY_ANALYSIS.out.beta_div_metrics, "beta_diversity/metrics")
+                save_output(DIVERSITY_ANALYSIS.out.beta_div_metrics, "diversity_analysis/beta_diversity/metrics")
             }
             if (params.save_tree_files) {
                 save_output(DIVERSITY_ANALYSIS.out.rooted_tree_newick, "diversity_analysis/tree")

@@ -13,6 +13,7 @@ process ALPHA_RAREFACTION {
     path "versions.yml"                     , emit: versions
 
     script:
+    def args = task.ext.args ?: ''
     """
     export XDG_CONFIG_HOME="./xdgconfig"
     export MPLCONFIGDIR="./mplconfigdir"
@@ -22,7 +23,8 @@ process ALPHA_RAREFACTION {
         --i-table ${table} \\
         --i-phylogeny ${phylogeny} \\
         --p-max-depth "\$(<${maxcount})" \\
-        --o-visualization alpha_rarefaction.qzv
+        --o-visualization alpha_rarefaction.qzv \\
+        ${args}
 
     qiime tools export \\
         --input-path alpha_rarefaction.qzv \\
@@ -35,6 +37,7 @@ process ALPHA_RAREFACTION {
     """
 
     stub:
+    def args = task.ext.args ?: ''
     """
     touch alpha_rarefaction.qzv
     mkdir alpha_rarefaction

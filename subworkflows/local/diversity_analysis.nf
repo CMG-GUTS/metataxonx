@@ -27,9 +27,6 @@ workflow DIVERSITY_ANALYSIS {
     MINMAX( biom_without_taxonomy )
     ch_versions = ch_versions.mix(MINMAX.out.versions)
 
-    MINMAX.out.maxcount.view()
-    MINMAX.out.mincount.view()
-
     ALPHA_RAREFACTION(
         qiime_asv_table,
         FASTTREE.out.rooted_tree_qza,

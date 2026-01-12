@@ -12,17 +12,17 @@ process BIOTAVIZ {
 
     script:
     """
-    python3.11 $projectDir/bin/python/biom2biotaviz.py \\
+    biom2biotaviz.py \\
         -i ${biomfile} \\
         -o foo.txt
-    python3.11 $projectDir/bin/python/clean_biom_txt.py \\
+    clean_biom_txt.py \\
         -i  ${biomfile}.txt \\
         -o biom_clean_absolute.txt
-    python3.11 $projectDir/bin/python/biom2biotaviz.py \\
+    biom2biotaviz.py \\
         -i biom_clean_absolute.txt \\
         -o biotaviz_clean_absolute.txt \\
         -t
-    python3.11 $projectDir/bin/python/Biotaviz_counts_to_abundance.py \\
+    Biotaviz_counts_to_abundance.py \\
         -i biotaviz_clean_absolute.txt \\
         -o biotaviz_clean_relative.txt \\
         -r "${params.root_taxon}"
@@ -30,7 +30,7 @@ process BIOTAVIZ {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        python: \$(python3.11 --version 2>&1 | sed -e "s/Python //g")
+        python: \$(python3 --version 2>&1 | sed -e "s/Python //g")
     END_VERSIONS
     """
 
