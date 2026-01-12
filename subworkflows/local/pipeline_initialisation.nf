@@ -146,7 +146,7 @@ Data Input Options:
     For more information, visit: ${workflow.manifest.homePage}
     """.stripIndent()
     
-    workflow_command = "nextflow run ${workflow.manifest.mainScript} -profile <docker/singularity/.../institute> --reads samplesheet.csv --outdir <OUTDIR>"
+    workflow_command = "nextflow run ${workflow.manifest.mainScript} -profile <docker/singularity/test> --input samplesheet.csv --outdir <OUTDIR>"
     UTILS_NFVALIDATION_PLUGIN (
         help,
         workflow_command,

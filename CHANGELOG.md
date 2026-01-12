@@ -3,7 +3,7 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v1.0.0 - [2025-11-26]
+## v1.1.0 - [2026-01-12]
 
 ### `Added`:
     - `CHECK_INPUT` formats reads or samplesheet into meta channel
@@ -15,3 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Changed`:
     - Removed all python-based modularization and changed it to nextflow
+    - [#7](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/-/issues/7) Moved `git submodule` to it's own github and docker image.
+    - [#6](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/-/issues/6) Moved `biotaviz` to it's own github and docker image.
+    - [#8](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/-/issues/8) Changed repository name from `metataxonomics-DSL2` to `metataxonx`.
+    - [#9](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/-/issues/9) `minmax` uses `biom-format` instead of a custom script.
+
+## v1.0.0 - [2025-9-1]
+
+### `Changed`:
+    - [#4](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/-/issues/4) refactored DSL1 to DSL2 of old metataxonomics pipeline

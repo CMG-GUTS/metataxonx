@@ -57,6 +57,13 @@
 - [networkD3](https://github.com/christophergandrud/networkD3)
   > Christopher Gandrud (2014). networkD3: D3 JavaScript Network Graphs from R. R package version 0.4.1, https://cran.r-project.org/web/packages/networkD3.
 
+- [BiotaViz](https://github.com/ederveen/BiotaViz)
+  > Ederveen T (2026). BiotaViz is a microbiome compositional data standard which offers a convenient human readable format over multiple phylogenetic levels.
+
+- [OmicFlow](https://cran.r-project.org/package=OmicFlow)
+
+  > Gusinac A, Ederveen T, Boleij A (2025). OmicFlow: Fast and Efficient (Automated) Analysis of Sparse Omics Data., https://CRAN.R-project.org/package=OmicFlow.
+
 ## Software packaging/containerisation tools
 - [Docker](https://dl.acm.org/doi/10.5555/2600239.2600241)
 
