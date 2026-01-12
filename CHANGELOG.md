@@ -5,6 +5,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v1.1.0 - [2026-01-12]
 
+### `Changed`:
+    - [#7](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/-/issues/7) Moved `git submodule` to it's own github and docker image.
+    - [#6](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/-/issues/6) Moved `biotaviz` to it's own github and docker image.
+    - [#8](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/-/issues/8) Changed repository name from `metataxonomics-DSL2` to `metataxonx`.
+    - [#9](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/-/issues/9) `minmax` uses `biom-format` instead of a custom script.
+
+## v1.0.0 - [2025-11-26]
+
 ### `Added`:
     - `CHECK_INPUT` formats reads or samplesheet into meta channel
     - `CONFIGURE` now checks and downloads classifiers
@@ -15,10 +23,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Changed`:
     - Removed all python-based modularization and changed it to nextflow
-    - [#7](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/-/issues/7) Moved `git submodule` to it's own github and docker image.
-    - [#6](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/-/issues/6) Moved `biotaviz` to it's own github and docker image.
-    - [#8](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/-/issues/8) Changed repository name from `metataxonomics-DSL2` to `metataxonx`.
-    - [#9](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/-/issues/9) `minmax` uses `biom-format` instead of a custom script.
 
 ## v1.0.0 - [2025-9-1]
 
