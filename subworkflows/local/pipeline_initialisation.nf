@@ -4,16 +4,16 @@
     
 */
 
-include { paramsSummaryMap          } from 'plugin/nf-validation'
-include { fromSamplesheet           } from 'plugin/nf-validation'
+include { paramsSummaryMap          }   from    'plugin/nf-validation'
+include { fromSamplesheet           }   from    'plugin/nf-validation'
 
-include { metapipeLogo              } from '../nf-core/nf_pipeline_utils.nf'
-include { completionEmail           } from '../nf-core/nf_pipeline_utils.nf'
-include { completionSummary         } from '../nf-core/nf_pipeline_utils.nf'
-include { dashedLine                } from '../nf-core/nf_pipeline_utils.nf'
-include { imNotification            } from '../nf-core/nf_pipeline_utils.nf'
-include { UTILS_NEXTFLOW_PIPELINE } from '../nf-core/utils_nextflow_pipeline.nf'
-include { UTILS_NFVALIDATION_PLUGIN } from '../nf-core/utils_nfvalidation_plugin.nf'
+include { metapipeLogo              }   from    '../nf-core/nf_pipeline_utils.nf'
+include { completionEmail           }   from    '../nf-core/nf_pipeline_utils.nf'
+include { completionSummary         }   from    '../nf-core/nf_pipeline_utils.nf'
+include { dashedLine                }   from    '../nf-core/nf_pipeline_utils.nf'
+include { imNotification            }   from    '../nf-core/nf_pipeline_utils.nf'
+include { UTILS_NEXTFLOW_PIPELINE }     from    '../nf-core/utils_nextflow_pipeline.nf'
+include { UTILS_NFVALIDATION_PLUGIN }   from    '../nf-core/utils_nfvalidation_plugin.nf'
 
 
 /*
@@ -79,6 +79,7 @@ Data Input Options:
         --classifier_name           Name of classifier to be downloaded ('standard', 'diverse', 'human-stool', 'greengenes', default: 'standard')
         --classifier_path           Path to save and download the classifier (default: $projectDir/classifiers)
         --classifier_custom         Path to a custom classifier compatible to sklearn version 1.4.0 (default: null)
+        --classifier_test_set       Path to a dummy file of sequences to check the custom classifier compatibility (default: $projectDir/assets/classifier_test_query.fna).
         --standard_adapters         Path to a collection of adapter sequences (default: $projectDir/assets/adapters.fasta)
         --standard_primers          Path to a collection of primer sequences (default: $projectDir/assets/primers.fasta)
         --custom_primer_1           Custom primer sequence forward (default: none)

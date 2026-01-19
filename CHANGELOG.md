@@ -3,6 +3,14 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.2.0 - [2026-01-19]
+
+### `Added`:
+    - [#11](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/-/issues/11) `CONFIGURE` now also checks the classifier compatibility with a dummy sequence file
+
+### `Changed`:
+    - [#12](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/-/issues/12) pipeline now works in the processing given a single `sample_id`.
+
 ## v1.1.0 - [2026-01-12]
 
 ### `Changed`:

@@ -29,6 +29,7 @@ workflow METATAXONX {
 
     // Initate empty channels
     ch_versions = Channel.empty()
+    ch_versions = ch_versions.mix(CONFIGURE.out.versions)
     ch_multiqc_files = Channel.empty()
     ch_newick_tree = Channel.empty()
 
