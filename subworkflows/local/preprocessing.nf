@@ -3,14 +3,14 @@
     READ TRIM + QC + MERGE
 
 */
-include { CUTADAPT } from '../../modules/nf-core/cutadapt.nf'
-include { SEQKIT_SAMPLE } from '../../modules/nf-core/seqkit/sample.nf'
-include { PEAR } from '../../modules/nf-core/pear.nf'
-include { FLASH } from '../../modules/nf-core/flash.nf'
+include { CUTADAPT }                from    '../../modules/nf-core/cutadapt.nf'
+include { SEQKIT_SAMPLE }           from    '../../modules/nf-core/seqkit/sample.nf'
+include { PEAR }                    from    '../../modules/nf-core/pear.nf'
+include { FLASH }                   from    '../../modules/nf-core/flash.nf'
 
-include { FASTQC as FASTQC_reads } from '../../modules/nf-core/fastqc.nf'
-include { FASTQC as FASTQC_trim } from '../../modules/nf-core/fastqc.nf'
-include { FASTQC as FASTQC_merged } from '../../modules/nf-core/fastqc.nf'
+include { FASTQC as FASTQC_reads }  from    '../../modules/nf-core/fastqc.nf'
+include { FASTQC as FASTQC_trim }   from    '../../modules/nf-core/fastqc.nf'
+include { FASTQC as FASTQC_merged } from    '../../modules/nf-core/fastqc.nf'
 
 workflow PREPROCESSING {
     take:

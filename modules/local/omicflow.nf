@@ -5,6 +5,10 @@ process OMICFLOW {
     path(metadata_clean)
     path(biom_taxonomy)
     path(rooted_tree_newick)
+    val sample_size
+
+    when:
+    sample_size > 1
 
     output:
     path "report.html"              , emit: report

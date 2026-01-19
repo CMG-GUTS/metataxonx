@@ -4,8 +4,8 @@
     
 */
 
-include { samplesheetToList } from 'plugin/nf-schema'
-include { samplesheetToMetadata } from '../../lib/utils.groovy'
+include { samplesheetToList }       from    'plugin/nf-schema'
+include { samplesheetToMetadata }   from    '../../lib/utils.groovy'
 
 workflow CHECK_INPUT {
 
@@ -45,6 +45,7 @@ workflow CHECK_INPUT {
     }
 
     emit:
-    meta        = meta_ch
-    metadata    = metadata_ch
+    meta            =   meta_ch
+    metadata        =   metadata_ch
+    sample_size     =   meta.count()
 }

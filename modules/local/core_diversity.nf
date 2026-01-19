@@ -6,6 +6,10 @@ process CORE_DIVERSITY {
     path(tree)
     path(table)
     path(mincount)
+    val sample_size
+
+    when:
+    sample_size > 1
 
     output:
     path "diversity_core/*vector.qza"               , emit: alpha

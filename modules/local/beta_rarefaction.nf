@@ -6,6 +6,10 @@ process BETA_RAREFACTION {
     path(metadata)
     path(mincount)
     path(tree)
+    val sample_size
+
+    when:
+    sample_size > 1
 
     output:
     path "beta_rarefaction.qzv"                 , emit: beta_rarefaction_qiime

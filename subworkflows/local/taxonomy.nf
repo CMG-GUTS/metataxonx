@@ -3,9 +3,9 @@
     ADDING TAXONOMY TO BIOM
 
 */
-include { QIIME_IMPORT_EXPORT } from '../../modules/local/qiime_import_export.nf'
-include { ASSIGN_TAXONOMY } from '../../modules/local/assign_taxonomy.nf'
-include { COMBINE_TAXONOMY } from '../../modules/local/combine_taxonomy.nf'
+include { QIIME_IMPORT_EXPORT }     from    '../../modules/local/qiime_import_export.nf'
+include { ASSIGN_TAXONOMY }         from    '../../modules/local/assign_taxonomy.nf'
+include { COMBINE_TAXONOMY }        from    '../../modules/local/combine_taxonomy.nf'
 
 workflow TAXONOMY {
     take:

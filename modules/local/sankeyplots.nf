@@ -12,15 +12,15 @@ process SANKEYPLOTS {
 
     script:
     """
-    sankey-file-prep \\
+    sankey-file-prep.py \\
         --taxa-filter 0.01 \\
         --sample-repeat false \\
         --combine-rankstat false \\
         -m ${mapping} \\
         -i ${biotaviz}
 
-    sankey-diagram-html-generator biotaviz_sankey_prepfile-AverageAllSamples.csv
-    sankey-diagram-png-generator biotaviz_sankey_prepfile-AverageAllSamples.html
+    sankey-diagram-html-generator.R biotaviz_sankey_prepfile-AverageAllSamples.csv
+    sankey-diagram-png-generator.R biotaviz_sankey_prepfile-AverageAllSamples.html
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

@@ -5,6 +5,10 @@ process ALPHA_RAREFACTION {
     path(table)
     path(phylogeny)
     path(maxcount)
+    val sample_size
+
+    when:
+    sample_size > 1
 
     output:
     path "alpha_rarefaction.qzv"            , emit: qiime_alpha_file

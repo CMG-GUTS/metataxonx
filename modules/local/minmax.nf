@@ -3,6 +3,10 @@ process MINMAX {
 
     input:
     path biom_file
+    val sample_size
+
+    when:
+    sample_size > 1
 
     output:
     path "maxcount.txt"     , emit: maxcount

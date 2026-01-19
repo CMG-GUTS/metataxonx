@@ -3,6 +3,10 @@ process MERGE_ALPHA_DIVERSITY {
 
     input:
     path(alpha)
+    val sample_size
+
+    when:
+    sample_size > 1
 
     output:
     path "alpha_diversity.txt"          , emit: alpha_div

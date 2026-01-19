@@ -76,7 +76,8 @@ workflow METATAXONX {
                 DENOISE.out.dada2_mapping_file,
                 TAXONOMY.out.qiime_sequences_qza,
                 TAXONOMY.out.biom_without_taxonomy,
-                TAXONOMY.out.qiime_asv_table
+                TAXONOMY.out.qiime_asv_table,
+                CHECK_INPUT.out.sample_size
             )
             ch_versions = ch_versions.mix(DIVERSITY_ANALYSIS.out.versions)
             ch_newick_tree = DIVERSITY_ANALYSIS.out.rooted_tree_newick
@@ -109,6 +110,7 @@ workflow METATAXONX {
             REPORT(
                 TAXONOMY.out.biom_with_taxonomy,
                 CHECK_INPUT.out.metadata,
+                CHECK_INPUT.out.sample_size,
                 ch_newick_tree,
                 ch_multiqc_files,
                 ch_versions
@@ -129,7 +131,7 @@ workflow METATAXONX {
                 save_output(REPORT.out.analysis_report, "report")
                 save_output(REPORT.out.technical_report, "report")
             }
-        }        
+        }
     }
     
 }

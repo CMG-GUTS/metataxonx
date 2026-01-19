@@ -3,8 +3,8 @@
     DENOISE VIA DADA2 (BATCH-MODE OPTIONAL)
 
 */
-include { DADA2 } from '../../modules/local/dada2.nf'
-include { CREATE_QIIME_MAPPING } from '../../modules/local/create_qiime_mapping.nf'
+include { DADA2 }                   from    '../../modules/local/dada2.nf'
+include { CREATE_QIIME_MAPPING }    from    '../../modules/local/create_qiime_mapping.nf'
 
 workflow DENOISE {
     take:
