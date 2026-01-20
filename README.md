@@ -1,18 +1,16 @@
-[![CI](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/badges/main/pipeline.svg)](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/-/commits/main)
-[![Latest Release](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/-/badges/release.svg)](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metatonx/-/releases)
+
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A524.10.0-23aa62.svg?labelColor=000000)](https://www.nextflow.io/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
 [![nf-test](https://img.shields.io/badge/tested_with-nf--test-337ab7.svg)](https://code.askimed.com/nf-test)
 
-# ATTENTION!
-### This repository is not being updated anymore, please refer to [**new repo**](https://github.com/CMG-GUTS/metataxonx) !!
-
 ## Introduction **metaTAXONx**
 
-The 16S pipeline is a best-practice suite for the preprocessing, denoising and annotation of sequencing data obtained via 16S rRNA marker-gene sequencing. The pipeline contains [NF-core modules](https://github.com/nf-core/modules) and other local modules that are in the similar format. It can be runned via both docker and singularity containers.
+The 16S pipeline is a best-practice suite for the preprocessing, denoising and annotation of illumina short-read sequencing data obtained via 16S rRNA marker-gene sequencing. The pipeline contains [NF-core modules](https://github.com/nf-core/modules) and other local modules that are in the similar format. It can be runned via both docker and singularity containers.
 
-![test](docs/images/metataxonx_v1.1_drawio.png){width=90%}
+<p align="center">
+    <img src="docs/images/metataxonx_v1.1_drawio.png" alt="workflow" width="90%">
+</p>
 
 ## Pipeline summary
 
