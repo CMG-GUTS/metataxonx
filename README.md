@@ -1,4 +1,4 @@
-
+[![CI-stub-run](https://github.com/CMG-GUTS/metataxonx/actions/workflows/nf-build-stub.yaml/badge.svg)](https://github.com/CMG-GUTS/metataxonx/actions/workflows/nf-build-stub.yaml)
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A524.10.0-23aa62.svg?labelColor=000000)](https://www.nextflow.io/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
@@ -48,6 +48,11 @@ Since the latest version, metaBIOMx works with both a samplesheet (CSV) format o
 nextflow run main.nf --input <samplesheet.csv> -work-dir work -profile singularity
 nextflow run main.nf --input <'*_{1,R1,2,R2}.{fq,fq.gz,fastq,fastq.gz}'> -work-dir work -profile singularity
 ```
+You can also try to run the test data set in `tests/data` folder, these are also available via the `-profile test` and only work with the `'standard'` classifier name.
+
+> [!NOTE]
+> Tests data should be runned with the flags `--bypass_trim`, which is default on `true` in the `conf/test.config`
+
 
 ### 📋 Sample Metadata File Specification
 
