@@ -37,7 +37,7 @@ The pipeline uses [QIIME2](https://amplicon-docs.qiime2.org/en/stable/) for the 
 
 Clone the repository in a directory of your choice:
 ```bash
-git clone https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metataxonomics-DSL2.git
+git clone https://github.com/CMG-GUTS/metataxonx.git
 ```
 
 The pipeline is containerised, meaning it can be runned via docker or singularity images. No further actions need to be performed when using the docker profile, except a docker registery needs to be set on your local system, see [docker](https://docs.docker.com/engine/install/). In case singularity is used, images are automatically cached within the project directory.
@@ -98,7 +98,7 @@ These prefixes are used to generate an automated `OmicFlow` report with alpha, b
 
 ## Support
 
-If you are having issues, please [create an issue](https://gitlab.cmbi.umcn.nl/rtc-bioinformatics/metataxonomics-DSL2/-/issues)
+If you are having issues, please [create an issue](https://github.com/CMG-GUTS/metataxonx/issues)
 
 ## Citations
 
