@@ -6,7 +6,7 @@
 
 ## Introduction **metaTAXONx**
 
-The 16S pipeline is a best-practice suite for the preprocessing, denoising and annotation of illumina short-read sequencing data obtained via 16S rRNA marker-gene sequencing. The pipeline contains [NF-core modules](https://github.com/nf-core/modules) and other local modules that are in the similar format. It can be runned via both docker and singularity containers.
+This pipeline is a best-practice suite for the pre-processing, denoising, classification and annotation of Illumina short-read sequencing data obtained by 16S rRNA marker-gene sequencing. The pipeline contains [NF-core modules](https://github.com/nf-core/modules) and other local modules that are in the similar format. It can be runned via both docker and singularity containers.
 
 <p align="center">
     <img src="docs/images/metataxonx_v1.1_drawio.png" alt="workflow" width="90%">
@@ -102,7 +102,7 @@ If you are having issues, please [create an issue](https://github.com/CMG-GUTS/m
 
 ## Citations
 
-You can cite the `metataxonx` using the following DOI: 
+You can cite the `metataxonx` using the [DOI link](https://doi.org/10.48546/WORKFLOWHUB.WORKFLOW.2054.1) 
 
 An extensive list of references for the tools used by the pipeline can be found in the [`CITATIONS.md`](CITATIONS.md)
 file.
