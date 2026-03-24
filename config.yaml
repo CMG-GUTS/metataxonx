@@ -1,34 +1,20 @@
 ---
 # The playbook level
-- name: Install Java and Nextflow
+- name: Setting up metataxonx in catalog
   hosts: localhost
   gather_facts: false
   become: true
 
   # The tasks level. Just a yaml list of Ansible "module" objects
   tasks:
-  - name: Install required dependencies
-    ansible.builtin.apt:
-      pkg:
-        - curl
+    - name: Ensure .bashrc exists
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.bashrc"
+        state: touch
 
-  - name: Install latest version of JSDK
-    ansible.builtin.apt:
-      name: openjdk-17-jdk
-      state: latest
-      install_recommends: no
-
-  - name: Install & Move Nextflow
-    ansible.builtin.shell: |
-      curl -s https://get.nextflow.io | bash
-      mv nextflow /usr/local/bin/nextflow
-      chmod +x /usr/local/bin/nextflow
-    args:
-      chdir: /usr/local/bin
-      creates: /usr/local/bin/nextflow
-
-  - name: Ensure nextflow is executable
-    ansible.builtin.file:
-      path: "/usr/local/bin/nextflow"
-      mode: "0755"
-      state: file
+    - name: Add metataxonx alias using playbook directory
+      ansible.builtin.lineinfile:
+        path: "{{ ansible_env.HOME }}/.bashrc"
+        line: "alias metataxonx='sudo nextflow run {{ ansible_playbook_dir }}/main.nf'"
+        create: true
+        backup: true
