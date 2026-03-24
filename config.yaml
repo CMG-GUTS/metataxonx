@@ -7,14 +7,11 @@
 
   # The tasks level. Just a yaml list of Ansible "module" objects
   tasks:
-    - name: Ensure .bashrc exists
-      ansible.builtin.file:
-        path: "{{ ansible_env.HOME }}/.bashrc"
-        state: touch
-
-    - name: Add metataxonx alias using playbook directory
-      ansible.builtin.lineinfile:
-        path: "{{ ansible_env.HOME }}/.bashrc"
-        line: "alias metataxonx='sudo nextflow run {{ ansible_playbook_dir }}/main.nf'"
-        create: true
-        backup: true
+    - name: Make metataxonx executable
+      ansible.builtin.copy:
+        dest: /usr/local/bin/metataxonx
+        mode: "0755"
+        content: |
+          #!/usr/bin/env bash
+          cd "{{ playbook_dir }}"
+          exec sudo nextflow run main.nf "$@"
