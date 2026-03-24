@@ -31,28 +31,79 @@ Specific pre-built classifiers can be assigned via `--classifier_name`, which ar
 
 The pipeline uses [QIIME2](https://amplicon-docs.qiime2.org/en/stable/) for the construction of a phylogentic tree via [fasttree](https://amplicon-docs.qiime2.org/en/stable/references/plugins/phylogeny.html#q2-action-phylogeny-fasttree) and for diversity analysis, such as [alpha diversity](https://amplicon-docs.qiime2.org/en/stable/references/plugins/diversity.html#q2-action-diversity-alpha-rarefaction) and [beta diversity](https://amplicon-docs.qiime2.org/en/stable/references/plugins/diversity.html#q2-action-diversity-beta-rarefaction). Moreover, the pipeline uses rarefied data to ensure consistent sampling depth.
 
-## Installation
-> [!NOTE]
-> Make sure you have installed the latest [nextflow](https://www.nextflow.io/docs/latest/install.html#install-nextflow) version! 
+## Running on the Surf Research Cloud
+Create your VM with the `metataxonx-nf` catalog item and choose the size. Once the VM is created you can access it via the `ssh username@ip-address` as long as you have an `rsa` ssh key set-up on your profile. 
 
-Clone the repository in a directory of your choice:
+A list of available arguments can be viewed with `metataxonx --help`, getting only nextflow options can be done with `metataxonx -h`.
+
+### Usage & test run
+You can start a simple test-run as follows:
 ```bash
-git clone https://github.com/CMG-GUTS/metataxonx.git
+metataxonx -profile test,docker -work-dir work --output test_result
 ```
 
-The pipeline is containerised, meaning it can be runned via docker or singularity images. No further actions need to be performed when using the docker profile, except a docker registery needs to be set on your local system, see [docker](https://docs.docker.com/engine/install/). In case singularity is used, images are automatically cached within the project directory.
+When running it on real data the user can either give a samplesheet (via `--input`) or pass the reads (via `--reads`). During each run the `-profile docker` needs to be supplied, other profiles besides `test` and `docker` are not supported in this catalog. 
 
-## Usage
-Since the latest version, metaBIOMx works with both a samplesheet (CSV) format or a path to the input files. Preferably, samplesheets should be provided.
+Example run:
 ```bash
-nextflow run main.nf --input <samplesheet.csv> -work-dir work -profile singularity
-nextflow run main.nf --input <'*_{1,R1,2,R2}.{fq,fq.gz,fastq,fastq.gz}'> -work-dir work -profile singularity
+metataxonx -profile docker -work-dir work --reads "*{R1,R2}.fastq.gz" --output test_result # adding reads
+metataxonx -profile docker -work-dir work --input samplesheet.csv --output test_result # adding samplesheet
 ```
-You can also try to run the test data set in `tests/data` folder, these are also available via the `-profile test` and only work with the `'standard'` classifier name.
 
 > [!NOTE]
-> Tests data should be runned with the flags `--bypass_trim`, which is default on `true` in the `conf/test.config`
+> The memory requirements are restricted to a 1 core 8GB RAM machine
 
+To change the cpus/memory usage for different processes one can increase the cpu with `--process_low_cpu`, `--process_med_cpu`, `--process_high_cpu` and restrict the overall maximum cpus with `--cpus`. To increase the memory, one should supply an extra config file called for example `memory.config` with the following content. Increasing memory should never be a single number but as `10.GB` where the number `10` is the value and `.GB` the unit.
+```
+process {
+
+    cpus   = {  1    * task.attempt     }
+    memory = {  1.GB * task.attempt     }
+    time   = {  1.h  * task.attempt     }
+
+    errorStrategy = { task.exitStatus in ((130..145) + 104) ? 'retry' : 'finish' }
+    maxRetries    = 1
+    maxErrors     = '-1'
+
+    // Process-specific resource requirements
+    // NOTE - Please try and re-use the labels below as much as possible.
+    //        These labels are used and recognised by default in DSL2 files hosted on nf-core/modules.
+    //        If possible, it would be nice to keep the same label naming convention when
+    //        adding in your local modules too.
+    // See https://www.nextflow.io/docs/latest/config.html#config-process-selectors
+    withLabel:process_single {
+        cpus   = {  1                       }
+        memory = {  1.GB * task.attempt     }
+        time   = {  1.h  * task.attempt     }
+    }
+    withLabel:process_low {
+        // Adjust memory with e.g. 10.GB
+        cpus   = {  params.process_low_cpu  * task.attempt  }
+        memory = {  2.GB * task.attempt    } 
+        time   = {  1.h   * task.attempt    }
+        maxForks = params.cpus.intdiv(params.process_low_cpu)
+    }
+    withLabel:process_medium {
+        cpus   = {  params.process_med_cpu   * task.attempt  }
+        memory = {  4.GB * task.attempt    }
+        time   = {  1.h   * task.attempt    }
+        maxForks = params.cpus.intdiv(params.process_med_cpu)
+    }
+    withLabel:process_high {
+        cpus   = {  params.process_high_cpu   * task.attempt  }
+        memory = {  6.GB * task.attempt    }
+        time   = {  1.h  * task.attempt    }
+        maxForks = params.cpus.intdiv(params.process_high_cpu)
+    }
+    withLabel:error_ignore {
+        errorStrategy = 'ignore'
+    }
+    withLabel:error_retry {
+        errorStrategy = 'retry'
+        maxRetries    = 2
+    }
+}
+```
 
 ### 📋 Sample Metadata File Specification
 
